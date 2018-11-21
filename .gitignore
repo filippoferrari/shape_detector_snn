@@ -307,3 +307,7 @@ modules.xml
 
 
 # End of https://www.gitignore.io/api/pycharm+all
+
+# Spinnaker stuff
+application_generated_data_files/**
+reports/**

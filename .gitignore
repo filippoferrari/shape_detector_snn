@@ -311,3 +311,5 @@ modules.xml
 # Spinnaker stuff
 application_generated_data_files/**
 reports/**
+
+recordings/**

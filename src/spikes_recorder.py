@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function
 
 import argparse
@@ -46,6 +48,38 @@ def grab_frame(dev, width, height, col_from, col_to, channel):
 
     return img
 
+def make_spikes_lists(output_type, pos, neg, max_diff, \
+                      flag_shift, data_shift, data_mask, \
+                      frame_time_ms, thresh, \
+                      num_bins=1, log2_table=None):
+
+    if output_type == OUTPUT_RATE:
+
+        return gs.make_spike_lists_rate(pos, neg, max_diff,
+                                     thresh,
+                                     flag_shift, data_shift, data_mask,
+                                     frame_time_ms,
+                                     key_coding=KEY_SPINNAKER)
+
+    elif output_type == OUTPUT_TIME_BIN_THR:
+
+        return gs.make_spike_lists_time_bin_thr(pos, neg, max_diff,
+                                                 flag_shift, data_shift, data_mask,
+                                                 frame_time_ms,
+                                                 thresh,
+                                                 thresh,
+                                                 num_bins,
+                                                 log2_table,
+                                                 key_coding=KEY_SPINNAKER)
+    else:
+
+        return gs.make_spike_lists_time(pos, neg, max_diff,
+                                     flag_shift, data_shift, data_mask,
+                                     frame_time_ms,
+                                     frame_time_ms,
+                                     thresh,
+                                     thresh,
+                                     key_coding=KEY_SPINNAKER)
 
 # ---------------------------------------------------------------------- #
 
@@ -61,8 +95,7 @@ def main(args):
     print('Resolution:', args.res)
     print('Video id:', video_dev_id)
 
-    mode = args.res
-    cam_res = int(mode)
+    cam_res = int(args.res)
     width = cam_res  # square output
     height = cam_res
     shape = (height, width)
@@ -73,7 +106,7 @@ def main(args):
     data_mask = uint8(cam_res - 1)
 
     polarity = POLARITY_DICT[MERGED_POLARITY]
-    output_type = OUTPUT_TIME
+    output_type = OUTPUT_RATE
     history_weight = 1.0
     threshold = 12  # ~ 0.05*255
     max_threshold = 180  # 12*15 ~ 0.7*255
@@ -113,7 +146,11 @@ def main(args):
     video_dev = cv2.VideoCapture(video_dev_id)  # webcam
     # video_dev = cv2.VideoCapture('/path/to/video/file')  # webcam
 
-    print(video_dev.isOpened())
+    print('Webcam working:', video_dev.isOpened())
+
+    if not video_dev.isOpened():
+        print('Exiting because webcam is not working')
+        exit()
 
     # ps3 eyetoy can do 125fps
     try:
@@ -124,7 +161,8 @@ def main(args):
     fps = video_dev.get(cv2.CAP_PROP_FPS)
     if fps == 0.0:
         fps = 125.0
-    max_time_ms = int(1000./float(fps))
+    frame_time_ms = int(1000./float(fps))
+    time_bin_ms = frame_time_ms // num_bits
 
     # ---------------------- main loop -------------------------------------#
 
@@ -132,10 +170,19 @@ def main(args):
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.startWindowThread()
 
+    output_spikes = []
+
+    if output_type == OUTPUT_TIME or output_type == OUTPUT_RATE:
+        num_bits = np.floor(frame_time_ms)
+    else:
+        num_bits = 5.
+
     is_first_pass = True
     start_time = time.time()
     end_time = 0
     frame_count = 0
+    total_time = 0
+
     while True:
         # get an image from video source
         if is_first_pass:
@@ -154,7 +201,7 @@ def main(args):
 
         # update the reference
         ref[:] = gs.update_reference_time_binary_thresh(abs_diff, spikes, ref,
-                                                        threshold, max_time_ms,
+                                                        threshold, frame_time_ms,
                                                         num_active_bits,
                                                         history_weight,
                                                         log2_table)
@@ -162,15 +209,17 @@ def main(args):
         # convert into a set of packages to send out
         neg_spks, pos_spks, max_diff = gs.split_spikes(spikes, abs_diff, polarity)
 
-        # this takes too long, could be parallelized at expense of memory
-        spike_lists = gs.make_spike_lists_time_bin_thr(pos_spks, neg_spks,
-                                                       max_diff,
-                                                       up_down_shift, data_shift, data_mask,
-                                                       max_time_ms,
-                                                       threshold,
-                                                       max_threshold,
-                                                       num_bits,
-                                                       log2_table)
+        spike_lists = make_spikes_lists(output_type, 
+                                        pos_spks, 
+                                        neg_spks, 
+                                        max_diff,
+                                        up_down_shift, 
+                                        data_shift, 
+                                        data_mask,
+                                        frame_time_ms,
+                                        max_threshold,
+                                        num_bits, 
+                                        log2_table)
 
         spk_img[:] = gs.render_frame(spikes, curr, cam_res, cam_res, polarity)
         cv2.imshow(WINDOW_NAME, spk_img.astype(uint8))
@@ -180,12 +229,26 @@ def main(args):
 
         end_time = time.time()
 
+        # Compute frames per second
         if end_time - start_time >= 1.0:
             print('{} frames per second'.format(frame_count))
             frame_count = 0
             start_time = time.time()
         else:
             frame_count += 1
+
+        # Write spikes out in correct format
+        time_index = 0
+        for spk_list in spike_lists:
+            for spk in spk_list:
+                output_spikes.append('{} {:f}'.format(spk, total_time + time_index))
+            time_index += time_bin_ms
+        
+        total_time += frame_time_ms
+
+    if args.output_file:
+        with open(args.output_file, 'w') as fh:
+            fh.write('\n'.join(output_spikes))
 
     cv2.destroyAllWindows()
     cv2.waitKey(1)
@@ -194,9 +257,10 @@ def main(args):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-c', '--channel', default='RGB', required=False, type=str)
-    parser.add_argument('-r', '--res', default=MODE_128, required=False, type=int)
-    parser.add_argument('-v', '--video_id', default='0', required=False, type=str)
+    parser.add_argument('-c', '--channel', default='RGB', required=False, type=str, help='Webcam channels to use [RGB, RED, GREEN, BLUE]')
+    parser.add_argument('-o', '--output_file', default=None, required=False, type=str, help='Absolute path for the output file')
+    parser.add_argument('-r', '--res', default=MODE_128, required=False, type=int, help='Resolution, [16, 32, 64, 128, 256]')
+    parser.add_argument('-v', '--video_id', default='0', required=False, type=str, help='Device to use, 0 is the integrated webcam')
 
     args = parser.parse_args()
 

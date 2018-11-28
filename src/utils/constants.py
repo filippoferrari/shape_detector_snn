@@ -1,5 +1,7 @@
 from numpy import uint8
 
+KEY_SPINNAKER = 0
+
 MODE_256 = '256'
 MODE_128 = '128'
 MODE_64  = '64'

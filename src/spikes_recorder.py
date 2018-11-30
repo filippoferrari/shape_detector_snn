@@ -48,13 +48,36 @@ def grab_frame(dev, width, height, col_from, col_to, channel):
 
     return img
 
+
+def update_ref(output_type, abs_diff, spikes, ref, thresh, frame_time_ms, \
+               num_spikes=1, history_weight=1., log2_table=None):
+    
+    if output_type == OUTPUT_RATE:
+        return gs.update_reference_rate(abs_diff, spikes, ref, thresh,
+                                     frame_time_ms,
+                                     history_weight)
+
+    elif output_type == OUTPUT_TIME_BIN_THR:
+        
+        return gs.update_reference_time_binary_thresh(abs_diff, spikes, ref,
+                                                   thresh,
+                                                   frame_time_ms,
+                                                   num_spikes=num_spikes,
+                                                   history_weight=history_weight,
+                                                   log2_table=log2_table)
+    else:
+        return gs.update_reference_time_thresh(abs_diff, spikes, ref,
+                                            thresh,
+                                            frame_time_ms,
+                                            history_weight)
+
+
 def make_spikes_lists(output_type, pos, neg, max_diff, \
                       flag_shift, data_shift, data_mask, \
                       frame_time_ms, thresh, \
                       num_bins=1, log2_table=None):
 
     if output_type == OUTPUT_RATE:
-
         return gs.make_spike_lists_rate(pos, neg, max_diff,
                                      thresh,
                                      flag_shift, data_shift, data_mask,
@@ -62,7 +85,6 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                                      key_coding=KEY_SPINNAKER)
 
     elif output_type == OUTPUT_TIME_BIN_THR:
-
         return gs.make_spike_lists_time_bin_thr(pos, neg, max_diff,
                                                  flag_shift, data_shift, data_mask,
                                                  frame_time_ms,
@@ -70,16 +92,16 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                                                  thresh,
                                                  num_bins,
                                                  log2_table,
-                                                 key_coding=KEY_SPINNAKER)
+                                                 key_coding=KEY_XYP)
     else:
-
         return gs.make_spike_lists_time(pos, neg, max_diff,
                                      flag_shift, data_shift, data_mask,
                                      frame_time_ms,
                                      frame_time_ms,
                                      thresh,
                                      thresh,
-                                     key_coding=KEY_SPINNAKER)
+                                     key_coding=KEY_XYP)
+
 
 # ---------------------------------------------------------------------- #
 
@@ -200,11 +222,11 @@ def main(args):
                                             width, height, inh_width)
 
         # update the reference
-        ref[:] = gs.update_reference_time_binary_thresh(abs_diff, spikes, ref,
-                                                        threshold, frame_time_ms,
-                                                        num_active_bits,
-                                                        history_weight,
-                                                        log2_table)
+        ref[:] = update_ref(output_type, abs_diff, spikes, ref,
+                            threshold, frame_time_ms,
+                            num_bits,
+                            history_weight,
+                            log2_table)
 
         # convert into a set of packages to send out
         neg_spks, pos_spks, max_diff = gs.split_spikes(spikes, abs_diff, polarity)
@@ -241,13 +263,16 @@ def main(args):
         time_index = 0
         for spk_list in spike_lists:
             for spk in spk_list:
-                output_spikes.append('{} {:f}'.format(spk, total_time + time_index))
+                output_spikes.append('{},{:f}'.format(spk, total_time + time_index))
             time_index += time_bin_ms
         
         total_time += frame_time_ms
 
     if args.output_file:
+        # First line is dimension of video
         with open(args.output_file, 'w') as fh:
+            fh.write('{}\n'.format(cam_res))
+            fh.write('{}\n'.format(total_time))
             fh.write('\n'.join(output_spikes))
 
     cv2.destroyAllWindows()

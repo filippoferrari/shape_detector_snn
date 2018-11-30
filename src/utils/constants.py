@@ -1,6 +1,11 @@
 from numpy import uint8
 
 KEY_SPINNAKER = 0
+KEY_XYP = 1
+
+VALS = 2
+COLS = 1
+ROWS = 0
 
 MODE_256 = '256'
 MODE_128 = '128'

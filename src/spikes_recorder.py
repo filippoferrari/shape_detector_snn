@@ -78,12 +78,18 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                       num_bins=1, log2_table=None):
 
     if output_type == OUTPUT_RATE:
-        return gs.make_spike_lists_rate(pos, neg, max_diff,
+        spin = gs.make_spike_lists_rate(pos, neg, max_diff,
                                      thresh,
                                      flag_shift, data_shift, data_mask,
                                      frame_time_ms,
                                      key_coding=KEY_SPINNAKER)
 
+        xyp = make_spike_lists_rate(pos, neg, max_diff,
+                                     thresh,
+                                     flag_shift, data_shift, data_mask,
+                                     frame_time_ms,
+                                     key_coding=KEY_SPINNAKER)
+        return spin, xyp
     elif output_type == OUTPUT_TIME_BIN_THR:
         return gs.make_spike_lists_time_bin_thr(pos, neg, max_diff,
                                                  flag_shift, data_shift, data_mask,
@@ -102,6 +108,83 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                                      thresh,
                                      key_coding=KEY_XYP)
 
+########################
+
+
+def grab_spike_key( row,  col, flag_shift,  data_shift, data_mask, is_pos_spike,  key_coding=KEY_SPINNAKER):
+    spike_key = spike_to_xyp(row, col, is_pos_spike)
+                             
+    return spike_key
+
+def spike_to_xyp( row,  col, is_pos_spike):
+  return np.array([col, row, is_pos_spike])
+
+def make_spike_lists_rate(pos_spikes,
+                          neg_spikes,
+                          global_max,
+                          threshold,
+                          flag_shift,
+                          data_shift,
+                          data_mask,
+                          max_time_ms,
+                          key_coding=KEY_SPINNAKER):
+    """
+        Convert spike (row, col, val, sign) lists into a list of Address
+        Event Representation (AER) encoded spikes. Rate-encoded values.
+        :param pos_spikes:  Positive (up) spikes to encode
+        :param neg_spikes:  Negative (down) spikes to encode
+        :param global_max:  Maximum change that happened for current frame,
+                            used to limit the number of memory slots needed
+        :param flag_shift:  How many bits to shift for the pos/neg bit (depends on resolution)
+        :param data_shift:  How many bits to shift for the row (depends on resolution)
+        :param data_mask:   Bits to take into account for the row/column information
+        :param max_time_ms: Upper limit to the number of spikes that can be sent out
+        :returns list_of_lists: A list containing lists of keys that should be sent. Each
+                                key in the internal lists should be sent "at the same time"
+    """
+    max_spikes = max_time_ms
+    len_neg = len(neg_spikes[0])
+    len_pos = len(pos_spikes[0])
+    max_pix = len_neg + len_pos
+
+    list_of_lists = list()
+
+    for list_idx in range(max_spikes):
+        list_of_lists.append( list() )
+
+    for pix_idx in range(max_pix):
+        spike_key = 0
+
+        if pix_idx < len_pos:
+            spike_key = grab_spike_key(pos_spikes[ROWS, pix_idx], \
+                                        pos_spikes[COLS, pix_idx], \
+                                        flag_shift, data_shift, data_mask,\
+                                        is_pos_spike = 1,
+                                        key_coding=key_coding)
+
+            val = pos_spikes[VALS, pix_idx]//threshold
+            val = (max_spikes - 1) - val
+            spike_idx = max(0, val)
+
+        else:
+            neg_idx = pix_idx - len_pos
+            spike_key = grab_spike_key(neg_spikes[ROWS, neg_idx], \
+                                        neg_spikes[COLS, neg_idx], \
+                                        flag_shift, data_shift, data_mask,\
+                                        is_pos_spike = 0,
+                                        key_coding=key_coding)
+
+            val = neg_spikes[VALS, neg_idx]//threshold
+            val = (max_spikes - 1) - val
+        #~       print("neg rate spikes val, key", val, spike_key)
+            spike_idx = max(0, val)
+        
+        for list_idx in range(spike_idx):
+            list_of_lists[list_idx].append(spike_key)
+
+
+
+    return list_of_lists
 
 # ---------------------------------------------------------------------- #
 
@@ -194,10 +277,10 @@ def main(args):
 
     output_spikes = []
 
-    if output_type == OUTPUT_TIME or output_type == OUTPUT_RATE:
-        num_bits = np.floor(frame_time_ms)
-    else:
-        num_bits = 5.
+    # if output_type == OUTPUT_TIME or output_type == OUTPUT_RATE:
+    #     num_bits = np.floor(frame_time_ms)
+    # else:
+    #     num_bits = 5.
 
     is_first_pass = True
     start_time = time.time()
@@ -231,7 +314,7 @@ def main(args):
         # convert into a set of packages to send out
         neg_spks, pos_spks, max_diff = gs.split_spikes(spikes, abs_diff, polarity)
 
-        spike_lists = make_spikes_lists(output_type, 
+        spike_lists, xyp_lists = make_spikes_lists(output_type, 
                                         pos_spks, 
                                         neg_spks, 
                                         max_diff,
@@ -261,9 +344,9 @@ def main(args):
 
         # Write spikes out in correct format
         time_index = 0
-        for spk_list in spike_lists:
-            for spk in spk_list:
-                output_spikes.append('{},{:f}'.format(spk, total_time + time_index))
+        for spk_list, xyp_list in zip(spike_lists, xyp_lists):
+            for spk, xyp in zip(spk_list, xyp_list):
+                output_spikes.append('{},{:f},{}'.format(spk, total_time + time_index, xyp))
             time_index += time_bin_ms
         
         total_time += frame_time_ms

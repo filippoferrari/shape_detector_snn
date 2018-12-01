@@ -46,9 +46,8 @@ def populate_spikes(cam_res, lines):
         # Format of each line is "neuron_id time_ms"
         parts = line.split(',')
         row, col, polarity = decode_spike(cam_res, int(parts[0]))
-        temp = filter(None, parts[2].strip('[').strip(']').split(' '))
-        if int(temp[0]) != col or int(temp[1]) != row or int(temp[2]) != polarity:
-            print('{} {} - {} {} - {} {}'.format(temp[0],col, temp[1],row, temp[2],polarity))
+        if polarity:
+            out[row*cam_res+col].append(float(parts[1]))
 
     return out 
 
@@ -66,9 +65,11 @@ def read_spikes_input(filepath):
     sim_time = int(lines[1])
 
     print('Resolution:', cam_res)
-    print('Simulation time:', sim_time)
+    print('Simulation time:', sim_time, 'ms')
 
+    print('Processing input file...')
     spikes = populate_spikes(cam_res, lines[2:])
+    print('    done')
 
     return cam_res, sim_time, spikes
 
@@ -82,8 +83,6 @@ def receive_spikes(label, time, neuron_ids):
 def main(args):
     # Read the input file
     cam_res, sim_time, spikes = read_spikes_input(args.input)
-
-    exit()
 
     n_total = cam_res * cam_res
 

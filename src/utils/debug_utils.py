@@ -1,19 +1,34 @@
 # -*- coding: utf-8 -*-
+import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons
 
-# Print a message when each neuron in the stimulus layer spikes
+from spikes_utils import populate_debug_times, read_recording_settings
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-i', '--input', required=True, type=str, help='Text file with the spikes')
+
+    args = parser.parse_args()
+
+    return args
+
+
 def receive_spikes(label, time, neuron_ids):
-    print(time)
-    # for neuron_id in neuron_ids:
-        # print("Neuron id: {} - Time: {} - Label: {}".format(neuron_id, time, label))
+    """
+    Print a message when each neuron in the stimulus layer spikes
+    """
+    for neuron_id in neuron_ids:
+        print("Neuron id: {} - Time: {} - Label: {}".format(neuron_id, time, label))
 
 
-# Visualise the spikes, each frame is a timestep
 def cube_show_slider(cube, axis=0, **kwargs):
     """
+    Visualise the spikes, each frame is a timestep
+
     Display a 3d ndarray with a slider to move along the third dimension.
 
     Extra keyword arguments are passed to imshow
@@ -52,3 +67,15 @@ def cube_show_slider(cube, axis=0, **kwargs):
     slider.on_changed(update)
 
     plt.show()
+
+
+def main(args):
+    # Read the input file
+    raw_spikes, cam_res, sim_time = read_recording_settings(args)
+    times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
+    cube_show_slider(times_debug)
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    main(args)

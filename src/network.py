@@ -49,6 +49,12 @@ def main(args):
     sim.setup(timestep=1.0)
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 150)
 
+    # Some values for the network 
+    exc_weight = 3
+    inh_weight = 5
+
+    exc_delay = 1
+    inh_delay = 1
 
     ##########################################################
     #### Set the first layers of the network
@@ -72,17 +78,17 @@ def main(args):
             neg_connections += horizontal_connectivity_neg(cam_res, x, y, cam_res/2)
 
     horizontal_proj_pos = sim.Projection(stimulus_pos, horizontal_layer, sim.FromListConnector(pos_connections), \
-                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     horizontal_proj_neg = sim.Projection(stimulus_neg, horizontal_layer, sim.FromListConnector(neg_connections), \
-                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=inh_weight, delay=inh_delay))
 
     horizontal_layer.record(['spikes'])
 
 
     ##########################################################
     #### Vertical receptive field
-    vertical_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+    vertical_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='vertical_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -92,17 +98,17 @@ def main(args):
             neg_connections += vertical_connectivity_neg(cam_res, x, y, cam_res/2)
 
     vertical_proj_pos = sim.Projection(stimulus_pos, vertical_layer, sim.FromListConnector(pos_connections), \
-                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     vertical_proj_neg = sim.Projection(stimulus_neg, vertical_layer, sim.FromListConnector(neg_connections), \
-                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=inh_weight, delay=inh_delay))
 
     vertical_layer.record(['spikes'])
 
 
     ##########################################################
     #### Left diagonal receptive field
-    left_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+    left_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='left_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -112,17 +118,17 @@ def main(args):
             neg_connections += left_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
 
     left_diag_proj_pos = sim.Projection(stimulus_pos, left_diag_layer, sim.FromListConnector(pos_connections), \
-                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     left_diag_proj_neg = sim.Projection(stimulus_neg, left_diag_layer, sim.FromListConnector(neg_connections), \
-                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=inh_weight, delay=inh_delay))
 
     left_diag_layer.record(['spikes'])
 
 
     ##########################################################
     #### Right diagonal receptive field
-    right_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+    right_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='right_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -132,10 +138,10 @@ def main(args):
             neg_connections += right_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
 
     right_diag_proj_pos = sim.Projection(stimulus_pos, right_diag_layer, sim.FromListConnector(pos_connections), \
-                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     right_diag_proj_neg = sim.Projection(stimulus_neg, right_diag_layer, sim.FromListConnector(neg_connections), \
-                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=inh_weight, delay=inh_delay))
 
     right_diag_layer.record(['spikes'])
 
@@ -161,7 +167,7 @@ def main(args):
 
     ##########################################################
     #### Plot the receptive fields
-    line_properties = [{'color': 'red', 'markersize': 2}, {'color': 'blue', 'markersize': 2}]
+    # line_properties = [{'color': 'red', 'markersize': 2}, {'color': 'blue', 'markersize': 2}]
     plot.Figure(
         # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
         # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \

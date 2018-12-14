@@ -4,13 +4,20 @@ from __future__ import print_function
 
 import argparse
 
+import matplotlib.pyplot as matplotlib
 import numpy as np
+
+import pyNN.utility.plotting as plot
 
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
-from utils.spikes_utils import populate_debug_times, read_recording_settings, read_spikes_input, neuron_id
 from utils.debug_utils import cube_show_slider, receive_spikes
+from utils.network_utils import horizontal_connectivity_pos, horizontal_connectivity_neg, \
+                                vertical_connectivity_pos, vertical_connectivity_neg, \
+                                left_diagonal_connectivity_pos, left_diagonal_connectivity_neg, \
+                                right_diagonal_connectivity_pos, right_diagonal_connectivity_neg
+from utils.spikes_utils import populate_debug_times, read_recording_settings, read_spikes_input, neuron_id
 
 
 def parse_args():
@@ -24,18 +31,6 @@ def parse_args():
     args = parser.parse_args()
 
     return args
-
-
-# def horizontal_connectivity(x, y, ):
-
-# pass
-
-
-
-# def vertical_connectivity():
-
-
-
 
 
 def main(args):
@@ -54,9 +49,9 @@ def main(args):
     sim.setup(timestep=1.0)
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 150)
 
-    #### Set the first layers of the network
 
-    sim_time = 2000
+    ##########################################################
+    #### Set the first layers of the network
 
     # SpikeSourceArray for the positive polarity of the DVS
     stimulus_pos = sim.Population(n_total, sim.SpikeSourceArray(spike_times=spikes_pos), label='stimulus_pos')
@@ -64,81 +59,120 @@ def main(args):
     # SpikeSourceArray for the negative polarity of the DVS
     stimulus_neg = sim.Population(n_total, sim.SpikeSourceArray(spike_times=spikes_neg), label='stimulus_neg')
 
-    # test_pop = sim.Population(n_total, sim.IF_curr_exp(), label='test_pop')
 
-    # input_proj_pos = sim.Projection(stimulus_pos, test_pop, sim.OneToOneConnector(),\
-    #                                 receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+    ##########################################################
+    #### Horizontal receptive field
+    horizontal_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
 
-    # input_proj_neg = sim.Projection(stimulus_neg, test_pop, sim.OneToOneConnector(),\
-    #                                 receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+    pos_connections = [] 
+    neg_connections = []
+    for x in range(0, cam_res, 2):
+        for y in range(0, cam_res, 2):
+            pos_connections += horizontal_connectivity_pos(cam_res, x, y, cam_res/2)
+            neg_connections += horizontal_connectivity_neg(cam_res, x, y, cam_res/2)
 
+    horizontal_proj_pos = sim.Projection(stimulus_pos, horizontal_layer, sim.FromListConnector(pos_connections), \
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
 
-    test_neuron = sim.Population(1, sim.IF_curr_exp(), label='test_neuron')
+    horizontal_proj_neg = sim.Projection(stimulus_neg, horizontal_layer, sim.FromListConnector(neg_connections), \
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
 
-    pos_connections = [
-        (neuron_id(15,16, cam_res), 0),
-        (neuron_id(16,16, cam_res), 0),
-        (neuron_id(17,16, cam_res), 0)
-    ]
-
-    projection_pos = sim.Projection(stimulus_pos, test_neuron, sim.FromListConnector(pos_connections), \
-                                    receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
-
-    neg_connections = [
-        (neuron_id(14,15, cam_res), 0),
-        (neuron_id(15,15, cam_res), 0),
-        (neuron_id(16,15, cam_res), 0),
-        (neuron_id(17,15, cam_res), 0),
-        (neuron_id(18,15, cam_res), 0),
-        (neuron_id(14,17, cam_res), 0),
-        (neuron_id(15,17, cam_res), 0),
-        (neuron_id(16,17, cam_res), 0),
-        (neuron_id(17,17, cam_res), 0),
-        (neuron_id(18,17, cam_res), 0)
-    ]
-
-    projection_neg = sim.Projection(stimulus_pos, test_neuron, sim.FromListConnector(neg_connections), \
-                                    receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
-
-    # stimulus_pos.record(['spikes'])
-    # stimulus_neg.record(['spikes'])
-    test_neuron.record(['spikes', 'v'])
+    horizontal_layer.record(['spikes'])
 
 
+    ##########################################################
+    #### Vertical receptive field
+    vertical_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+
+    pos_connections = [] 
+    neg_connections = []
+    for x in range(0, cam_res, 2):
+        for y in range(0, cam_res, 2):
+            pos_connections += vertical_connectivity_pos(cam_res, x, y, cam_res/2)
+            neg_connections += vertical_connectivity_neg(cam_res, x, y, cam_res/2)
+
+    vertical_proj_pos = sim.Projection(stimulus_pos, vertical_layer, sim.FromListConnector(pos_connections), \
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    vertical_proj_neg = sim.Projection(stimulus_neg, vertical_layer, sim.FromListConnector(neg_connections), \
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    vertical_layer.record(['spikes'])
 
 
+    ##########################################################
+    #### Left diagonal receptive field
+    left_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+
+    pos_connections = [] 
+    neg_connections = []
+    for x in range(0, cam_res, 2):
+        for y in range(0, cam_res, 2):
+            pos_connections += left_diagonal_connectivity_pos(cam_res, x, y, cam_res/2)
+            neg_connections += left_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
+
+    left_diag_proj_pos = sim.Projection(stimulus_pos, left_diag_layer, sim.FromListConnector(pos_connections), \
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    left_diag_proj_neg = sim.Projection(stimulus_neg, left_diag_layer, sim.FromListConnector(neg_connections), \
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    left_diag_layer.record(['spikes'])
+
+
+    ##########################################################
+    #### Right diagonal receptive field
+    right_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+
+    pos_connections = [] 
+    neg_connections = []
+    for x in range(0, cam_res, 2):
+        for y in range(0, cam_res, 2):
+            pos_connections += right_diagonal_connectivity_pos(cam_res, x, y, cam_res/2)
+            neg_connections += right_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
+
+    right_diag_proj_pos = sim.Projection(stimulus_pos, right_diag_layer, sim.FromListConnector(pos_connections), \
+                                        receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    right_diag_proj_neg = sim.Projection(stimulus_neg, right_diag_layer, sim.FromListConnector(neg_connections), \
+                                        receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=5, delay=1))
+
+    right_diag_layer.record(['spikes'])
+
+
+    ##########################################################
+    #### Run the simulation
     sim.run(sim_time)
 
+    neo = horizontal_layer.get_data(variables=['spikes'])
+    horizontal_spikes = neo.segments[0].spiketrains
 
-    # pos_spikes = stimulus_pos.get_data(variables=['spikes']).segments[0].spiketrains
-    # neg_spikes = stimulus_neg.get_data(variables=['spikes']).segments[0].spiketrains
-    # neo = test_pop.get_data(variables=['spikes'])
-    # test_spikes = neo.segments[0].spiketrains
-    # test_spikes = test_pop.get_data(variables=['spikes']).segments[0].spiketrains
-
-    neo = test_neuron.get_data(variables=["spikes", "v"])
-    test_spikes = neo.segments[0].spiketrains
-    v = neo.segments[0].filter(name='v')[0]
-
+    neo = vertical_layer.get_data(variables=['spikes'])
+    vertical_spikes = neo.segments[0].spiketrains
+    
+    neo = left_diag_layer.get_data(variables=['spikes'])
+    left_diag_spikes = neo.segments[0].spiketrains
+    
+    neo = right_diag_layer.get_data(variables=['spikes'])
+    right_diag_spikes = neo.segments[0].spiketrains
 
     sim.end()
 
 
-
-    # print(test_spikes)
-
-    import pyNN.utility.plotting as plot
-    import matplotlib.pyplot as matplotlib
-
+    ##########################################################
+    #### Plot the receptive fields
     line_properties = [{'color': 'red', 'markersize': 2}, {'color': 'blue', 'markersize': 2}]
     plot.Figure(
-        plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
+        # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
         # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
         # xlim=(0, sim_time), line_properties=line_properties), 
         # plot spikes (or in this case spike)
-        plot.Panel(test_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=2, xlim=(0, sim_time)), 
-        title="Spikes",
-        annotations="Simulated with {}".format(sim.name())
+        plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        title='Receptive fields',
+        annotations='Simulated with {}'.format(sim.name())
     ) 
     matplotlib.show()
     

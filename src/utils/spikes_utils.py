@@ -10,6 +10,19 @@ def neuron_id(row, col, res):
     return row * res + col
 
 
+def check_bounds(tmp, r1, r2):
+    """
+    tmp is a tuple of neuron ids (id1, id2) in two differente layers
+    r1 is the resolution of the first layer
+    r2 is the resolution of the second layer
+    """
+    out = []
+    for i in tmp:
+        if i[0] >= 0 and i[0] < r1*r1 and i[1] >= 0 and i[1] < r2*r2:
+            out.append(i)
+    return out
+
+
 def decode_spike(cam_res, key):
     """ 
     Decode DVS emulator output

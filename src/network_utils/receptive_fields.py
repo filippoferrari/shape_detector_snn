@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from spikes_utils import neuron_id
-
-
-def check_bounds(tmp, r1, r2):
-    out = []
-    for i in tmp:
-        if i[0] >= 0 and i[0] < r1*r1 and i[1] >= 0 and i[1] < r2*r2:
-            out.append(i)
-    return out
+from utils.spikes_utils import neuron_id, check_bounds
 
 
 def horizontal_connectivity_pos(r1, x, y, r2):

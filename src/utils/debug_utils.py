@@ -69,11 +69,26 @@ def cube_show_slider(cube, axis=0, **kwargs):
     plt.show()
 
 
+# Too slow
+def plot_3d(times):
+    t = np.nonzero(times)
+
+    # ax.scatter3D(times, c=zdata, cmap='Greens');
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(t[0], t[1], t[2], zdir='z', s=20, c=None, depthshade=True)
+
+    plt.show()
+
+
 def main(args):
     # Read the input file
     raw_spikes, cam_res, sim_time = read_recording_settings(args)
     times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
     cube_show_slider(times_debug)
+    # plot_3d(times_debug)
 
 
 if __name__ == '__main__':

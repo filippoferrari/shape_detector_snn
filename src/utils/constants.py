@@ -37,5 +37,6 @@ RED   = 'RED'
 GREEN = 'GREEN'
 BLUE  = 'BLUE'
 RGB   = 'RGB'
+VIDEO = 'VIDEO'
 
 IMAGE_TYPES = ['png', 'jpeg', 'jpg']

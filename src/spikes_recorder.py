@@ -26,6 +26,8 @@ def select_channel(frame, channel):
         return frame[:,:,0]
     elif channel == BLUE:
         return frame[:,:,0]
+    else channel == VIDEO:
+        return cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
 
 def grab_first(dev, res, channel):
@@ -41,13 +43,11 @@ def grab_first(dev, res, channel):
     return img, new_width, new_height, col_from, col_to, raw
 
 
-def grab_frame(dev, width, height, col_from, col_to, channel):
-    _, raw = dev.read()
+def grab_frame(raw, width, height, col_from, col_to, channel):
     img = cv2.resize(select_channel(raw, channel).astype(int16),
-                     (width, height))[:, col_from:col_to]
+                    (width, height))[:, col_from:col_to]
 
     return img, raw
-
 
 def update_ref(output_type, abs_diff, spikes, ref, thresh, frame_time_ms, \
                num_spikes=1, history_weight=1., log2_table=None):
@@ -166,7 +166,9 @@ def main(args):
 
     video_dev = cv2.VideoCapture(video_dev_id)  # webcam
     
-    # video_dev = cv2.VideoCapture('/path/to/video/file')  # webcam
+    # video_dev = cv2.VideoCapture('/Users/ff/dev/project/recordings/square_outline.avi')  # webcam
+    # video_dev = cv2.VideoCapture('/Users/ff/dev/project/recordings/vertical.avi')  # webcam
+    # channel = 'VIDEO'
 
     print('Webcam working:', video_dev.isOpened())
 
@@ -186,7 +188,7 @@ def main(args):
     frame_time_ms = int(1000./float(fps))
     time_bin_ms = frame_time_ms // num_bits
 
-    if args.video_output:
+    if args.save_video:
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
         video_writer = cv2.VideoWriter(args.output_file[:-4]+"_video.mp4", fourcc, fps, (cam_res, cam_res))
 
@@ -215,7 +217,10 @@ def main(args):
             curr[:], scale_width, scale_height, col_from, col_to, frame = grab_first(video_dev, cam_res, channel)
             is_first_pass = False
         else:
-            curr[:], frame = grab_frame(video_dev, scale_width,  scale_height, col_from, col_to, channel)
+            read_correctly, raw = video_dev.read()
+            if not read_correctly:
+                break
+            curr[:], frame = grab_frame(raw, scale_width,  scale_height, col_from, col_to, channel)
 
         # do the difference
         diff[:], abs_diff[:], spikes[:] = gs.thresholded_difference(curr, ref, threshold)
@@ -273,7 +278,7 @@ def main(args):
         total_time += frame_time_ms
 
         # write the flipped frame
-        if args.video_output:
+        if args.save_video:
             video_writer.write(cv2.resize(frame,(int(cam_res),int(cam_res))))
 
 
@@ -285,7 +290,7 @@ def main(args):
             fh.write('{}\n'.format(total_time))
             fh.write('\n'.join(output_spikes))
 
-    if args.video_output:
+    if args.save_video:
         video_writer.release()
 
     cv2.destroyAllWindows()
@@ -299,7 +304,7 @@ def parse_args():
     parser.add_argument('-o', '--output_file', default=None, required=False, type=str, help='Absolute path for the output file')
     parser.add_argument('-r', '--res', default=MODE_128, required=False, type=int, help='Resolution, [16, 32, 64, 128, 256]')
     parser.add_argument('-v', '--video_id', default='0', required=False, type=str, help='Device to use, 0 is the integrated webcam')
-    parser.add_argument('-V', '--video_file', action='store_false', default=True, help='Do not save the video file')
+    parser.add_argument('-V', '--save_video', action='store_false', default=True, help='Do not save the video file')
 
     args = parser.parse_args()
 

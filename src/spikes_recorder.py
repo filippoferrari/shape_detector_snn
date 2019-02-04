@@ -26,7 +26,7 @@ def select_channel(frame, channel):
         return frame[:,:,0]
     elif channel == BLUE:
         return frame[:,:,0]
-    else channel == VIDEO:
+    elif channel == VIDEO:
         return cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
 
@@ -163,17 +163,16 @@ def main(args):
 
     # -------------------------------------------------------------------- #
     # camera/frequency related                                             #
-
-    video_dev = cv2.VideoCapture(video_dev_id)  # webcam
-    
-    # video_dev = cv2.VideoCapture('/Users/ff/dev/project/recordings/square_outline.avi')  # webcam
-    # video_dev = cv2.VideoCapture('/Users/ff/dev/project/recordings/vertical.avi')  # webcam
-    # channel = 'VIDEO'
-
-    print('Webcam working:', video_dev.isOpened())
+    if args.input_video != 'webcam':
+        video_dev = cv2.VideoCapture(args.input_video)
+        channel = 'VIDEO'
+        print('File opened correctly:', video_dev.isOpened())
+    else:
+        video_dev = cv2.VideoCapture(video_dev_id)  # webcam
+        print('Webcam working:', video_dev.isOpened())
 
     if not video_dev.isOpened():
-        print('Exiting because webcam is not working')
+        print('Exiting because webcam/file is not working')
         exit()
 
     # ps3 eyetoy can do 125fps
@@ -301,12 +300,16 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-c', '--channel', default='RGB', required=False, type=str, help='Webcam channels to use [RGB, RED, GREEN, BLUE]')
+    parser.add_argument('-i', '--input_video', default='webcam', required=False, type=str, help='Either \'webcam\' or the absolute path to the video file')
     parser.add_argument('-o', '--output_file', default=None, required=False, type=str, help='Absolute path for the output file')
     parser.add_argument('-r', '--res', default=MODE_128, required=False, type=int, help='Resolution, [16, 32, 64, 128, 256]')
     parser.add_argument('-v', '--video_id', default='0', required=False, type=str, help='Device to use, 0 is the integrated webcam')
     parser.add_argument('-V', '--save_video', action='store_false', default=True, help='Do not save the video file')
 
     args = parser.parse_args()
+
+    if args.input_video != 'webcam':
+        args.save_video = False
 
     return args
 

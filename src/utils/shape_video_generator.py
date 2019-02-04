@@ -4,11 +4,11 @@ import numpy as np
 
 
 def main(args):
-    width = 32
-    height = 32
+    width = 128
+    height = 128
     FPS = 24
     seconds = 10
-    radius = 5
+    radius = 32
     bar_width = 1
     paint_h = int(height/2)
 
@@ -22,7 +22,7 @@ def main(args):
             if args.shape == 'circle':
                 cv2.circle(frame, (paint_x, paint_h), radius, (0, 0, 0), 1)
             elif args.shape == 'square':
-                cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+radius, paint_h+radius//2), (0,0,0), -1) 
+                cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+radius, paint_h+radius//2), (0,0,0), 3) 
             elif args.shape == 'vertical':
                 cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+bar_width, paint_h+radius//2), (0,0,0), -1) 
 

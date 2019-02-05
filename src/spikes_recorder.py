@@ -91,7 +91,7 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                                                  thresh,
                                                  num_bins,
                                                  log2_table,
-                                                 key_coding=KEY_XYP)
+                                                 key_coding=KEY_SPINNAKER)
     else:
         return gs.make_spike_lists_time(pos, neg, max_diff,
                                      flag_shift, data_shift, data_mask,
@@ -99,7 +99,7 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
                                      frame_time_ms,
                                      thresh,
                                      thresh,
-                                     key_coding=KEY_XYP)
+                                     key_coding=KEY_SPINNAKER)
 
 
 # ---------------------------------------------------------------------- #
@@ -112,10 +112,6 @@ def main(args):
         # Assume that urls have at least 4 characters
         video_dev_id = int(video_dev_id)
 
-    print('Channel:', args.channel)
-    print('Resolution:', args.res)
-    print('Video id:', video_dev_id)
-
     cam_res = int(args.res)
     width = cam_res  # square output
     height = cam_res
@@ -127,7 +123,7 @@ def main(args):
     data_mask = uint8(cam_res - 1)
 
     polarity = POLARITY_DICT[MERGED_POLARITY]
-    output_type = OUTPUT_RATE
+    output_type = OUTPUT_TIME
     history_weight = 1.0
     threshold = 12  # ~ 0.05*255
     max_threshold = 180  # 12*15 ~ 0.7*255
@@ -136,6 +132,14 @@ def main(args):
     scale_height = 0
     col_from = 0
     col_to = 0
+
+    print()
+    print('Channel:', channel)
+    print('Polarity:', polarity)
+    print('Output Type:', output_type)
+    print('Resolution:', cam_res)
+    print('Video id:', video_dev_id)
+    print()
 
     curr     = np.zeros(shape,     dtype=int16)
     ref      = 128*np.ones(shape,  dtype=int16)
@@ -187,7 +191,7 @@ def main(args):
     frame_time_ms = int(1000./float(fps))
     time_bin_ms = frame_time_ms // num_bits
 
-    if args.save_video:
+    if args.output_file and args.save_video:
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
         video_writer = cv2.VideoWriter(args.output_file[:-4]+"_video.mp4", fourcc, fps, (cam_res, cam_res))
 
@@ -276,8 +280,8 @@ def main(args):
         
         total_time += frame_time_ms
 
-        # write the flipped frame
-        if args.save_video:
+        # write the frame
+        if args.output_file and args.save_video:
             video_writer.write(cv2.resize(frame,(int(cam_res),int(cam_res))))
 
 
@@ -289,8 +293,8 @@ def main(args):
             fh.write('{}\n'.format(total_time))
             fh.write('\n'.join(output_spikes))
 
-    if args.save_video:
-        video_writer.release()
+        if args.save_video:
+            video_writer.release()
 
     cv2.destroyAllWindows()
     cv2.waitKey(1)

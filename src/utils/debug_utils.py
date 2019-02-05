@@ -25,61 +25,50 @@ def receive_spikes(label, time, neuron_ids):
         print("Neuron id: {} - Time: {} - Label: {}".format(neuron_id, time, label))
 
 
-def cube_show_slider(cube, axis=0, **kwargs):
-    """
-    Visualise the spikes, each frame is a timestep
+def image_slice_viewer(cube):
+    class IndexTracker(object):
+        def __init__(self, ax, X):
+            self.ax = ax
+            ax.figure.subplots_adjust(left=0.25, bottom=0.25)
+            ax.set_title('use scroll wheel to navigate images')
 
-    Display a 3d ndarray with a slider to move along the third dimension.
+            self.X = X
+            self.slices, rows, cols = X.shape
+            self.ind = 0
 
-    Extra keyword arguments are passed to imshow
-    """
+            self.im = ax.imshow(self.X[self.ind, :, :], vmin=-1, vmax=1)
 
-    # check dim
-    if not cube.ndim == 3:
-        raise ValueError("cube should be an ndarray with ndim == 3")
+            ax = fig.add_axes([0.25, 0.1, 0.65, 0.03])
+            self.slider = Slider(ax, 'Axis %i index' % self.slices, 0, self.slices,
+                            valinit=self.ind, valfmt='%i')
+            self.slider.on_changed(self.update_slider)
 
-    # generate figure
-    fig = plt.figure()
-    ax = plt.subplot(111)
-    fig.subplots_adjust(left=0.25, bottom=0.25)
+            self.update()
 
-    # select first image
-    s = [slice(1,2) if i == axis else slice(None) for i in xrange(3)]
-    im = cube[s].squeeze()
+        def press(self, event):
+            if event.key == 'right':
+                self.ind = (self.ind + 1) % self.slices
+            elif event.key == 'left':
+                self.ind = (self.ind - 1) % self.slices
+            self.slider.set_val(self.ind)
+            self.update()
 
-    # display image
-    l = ax.imshow(im, vmin=-1, vmax=1, **kwargs)
+        def update_slider(self, event):
+            ind = int(self.slider.val)
+            self.ind = ind
+            self.update()
 
-    # define slider
-    axcolor = 'lightgoldenrodyellow'
-    ax = fig.add_axes([0.25, 0.1, 0.65, 0.03])
-
-    slider = Slider(ax, 'Axis %i index' % axis, 0, cube.shape[axis] - 1,
-                    valinit=0, valfmt='%i')
-
-    def update(val):
-        ind = int(slider.val)
-        s = [slice(ind, ind + 1) if i == axis else slice(None) for i in xrange(3)]
-        im = cube[s].squeeze()
-        l.set_data(im, **kwargs)
-        fig.canvas.draw()
-
-    slider.on_changed(update)
-
-    plt.show()
+        def update(self):
+            self.im.set_data(self.X[self.ind, :, :])
+            ax.set_ylabel('slice %s' % self.ind)
+            self.im.axes.figure.canvas.draw()
 
 
-# Too slow
-def plot_3d(times):
-    t = np.nonzero(times)
+    fig, ax = plt.subplots(1, 1)
 
-    # ax.scatter3D(times, c=zdata, cmap='Greens');
-    from mpl_toolkits.mplot3d import Axes3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    tracker = IndexTracker(ax, cube)
 
-    ax.scatter(t[0], t[1], t[2], zdir='z', s=20, c=None, depthshade=True)
-
+    fig.canvas.mpl_connect('key_press_event', tracker.press)
     plt.show()
 
 
@@ -87,9 +76,7 @@ def main(args):
     # Read the input file
     raw_spikes, cam_res, sim_time = read_recording_settings(args)
     times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
-    cube_show_slider(times_debug)
-    # plot_3d(times_debug)
-
+    image_slice_viewer(times_debug)
 
 if __name__ == '__main__':
     args = parse_args()

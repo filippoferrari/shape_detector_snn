@@ -12,7 +12,7 @@ import pyNN.utility.plotting as plot
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
-from utils.debug_utils import cube_show_slider, receive_spikes
+from utils.debug_utils import receive_spikes
 from utils.spikes_utils import populate_debug_times, read_recording_settings, read_spikes_input, neuron_id
 
 from network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
@@ -47,15 +47,17 @@ def main(args):
 
     n_total = cam_res * cam_res
 
-    sim.setup(timestep=1.0)
-    sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 150)
+    sim.setup(timestep=1.0, min_delay=1.0, max_delay=10)
+    sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
 
     # Some values for the network 
-    exc_weight = 3
-    inh_weight = 5
+    exc_weight = 1
+    inh_weight = 1
 
     exc_delay = 1
     inh_delay = 1
+
+    down_size = 2
 
     ##########################################################
     #### Set the first layers of the network
@@ -69,14 +71,14 @@ def main(args):
 
     ##########################################################
     #### Horizontal receptive field
-    horizontal_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='horizontal_layer')
+    horizontal_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='horizontal_layer')
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res, 2):
-        for y in range(0, cam_res, 2):
-            pos_connections += horizontal_connectivity_pos(cam_res, x, y, cam_res/2)
-            neg_connections += horizontal_connectivity_neg(cam_res, x, y, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += horizontal_connectivity_pos(cam_res, x, y, cam_res/down_size)
+            neg_connections += horizontal_connectivity_neg(cam_res, x, y, cam_res/down_size)
 
     horizontal_proj_pos = sim.Projection(stimulus_pos, horizontal_layer, sim.FromListConnector(pos_connections), \
                                         receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
@@ -89,14 +91,14 @@ def main(args):
 
     ##########################################################
     #### Vertical receptive field
-    vertical_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='vertical_layer')
+    vertical_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='vertical_layer')
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res, 2):
-        for y in range(0, cam_res, 2):
-            pos_connections += vertical_connectivity_pos(cam_res, x, y, cam_res/2)
-            neg_connections += vertical_connectivity_neg(cam_res, x, y, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += vertical_connectivity_pos(cam_res, x, y, cam_res/down_size)
+            neg_connections += vertical_connectivity_neg(cam_res, x, y, cam_res/down_size)
 
     vertical_proj_pos = sim.Projection(stimulus_pos, vertical_layer, sim.FromListConnector(pos_connections), \
                                         receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
@@ -109,14 +111,14 @@ def main(args):
 
     ##########################################################
     #### Left diagonal receptive field
-    left_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='left_diag_layer')
+    left_diag_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='left_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res, 2):
-        for y in range(0, cam_res, 2):
-            pos_connections += left_diagonal_connectivity_pos(cam_res, x, y, cam_res/2)
-            neg_connections += left_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += left_diagonal_connectivity_pos(cam_res, x, y, cam_res/down_size)
+            neg_connections += left_diagonal_connectivity_neg(cam_res, x, y, cam_res/down_size)
 
     left_diag_proj_pos = sim.Projection(stimulus_pos, left_diag_layer, sim.FromListConnector(pos_connections), \
                                         receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
@@ -129,14 +131,14 @@ def main(args):
 
     ##########################################################
     #### Right diagonal receptive field
-    right_diag_layer = sim.Population(n_total / 4, sim.IF_curr_exp(), label='right_diag_layer')
+    right_diag_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='right_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res, 2):
-        for y in range(0, cam_res, 2):
-            pos_connections += right_diagonal_connectivity_pos(cam_res, x, y, cam_res/2)
-            neg_connections += right_diagonal_connectivity_neg(cam_res, x, y, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += right_diagonal_connectivity_pos(cam_res, x, y, cam_res/down_size)
+            neg_connections += right_diagonal_connectivity_neg(cam_res, x, y, cam_res/down_size)
 
     right_diag_proj_pos = sim.Projection(stimulus_pos, right_diag_layer, sim.FromListConnector(pos_connections), \
                                         receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
@@ -177,7 +179,7 @@ def main(args):
 
 
     ##########################################################
-    #### Diamon shape detector
+    #### Diamond shape detector
     diamond_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='diamond_layer')
     # The sides of the diamond are of length 2 * stride + 1
     stride = 2
@@ -209,23 +211,23 @@ def main(args):
     #### Run the simulation
     sim.run(sim_time)
 
-    # neo = horizontal_layer.get_data(variables=['spikes'])
-    # horizontal_spikes = neo.segments[0].spiketrains
+    neo = horizontal_layer.get_data(variables=['spikes'])
+    horizontal_spikes = neo.segments[0].spiketrains
 
-    # neo = vertical_layer.get_data(variables=['spikes'])
-    # vertical_spikes = neo.segments[0].spiketrains
+    neo = vertical_layer.get_data(variables=['spikes'])
+    vertical_spikes = neo.segments[0].spiketrains
     
-    # neo = left_diag_layer.get_data(variables=['spikes'])
-    # left_diag_spikes = neo.segments[0].spiketrains
+    neo = left_diag_layer.get_data(variables=['spikes'])
+    left_diag_spikes = neo.segments[0].spiketrains
     
-    # neo = right_diag_layer.get_data(variables=['spikes'])
-    # right_diag_spikes = neo.segments[0].spiketrains
+    neo = right_diag_layer.get_data(variables=['spikes'])
+    right_diag_spikes = neo.segments[0].spiketrains
 
-    neo = square_layer.get_data(variables=['spikes'])
-    square_spikes = neo.segments[0].spiketrains
+    # neo = square_layer.get_data(variables=['spikes'])
+    # square_spikes = neo.segments[0].spiketrains
 
-    neo = diamond_layer.get_data(variables=['spikes'])
-    diamond_spikes = neo.segments[0].spiketrains
+    # neo = diamond_layer.get_data(variables=['spikes'])
+    # diamond_spikes = neo.segments[0].spiketrains
 
     sim.end()
 
@@ -238,12 +240,12 @@ def main(args):
         # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
         # xlim=(0, sim_time), line_properties=line_properties), 
         # plot spikes (or in this case spike)
-        # plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        # plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        # plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        # plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        # plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        # plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         title='Receptive fields',
         annotations='Simulated with {}'.format(sim.name())
     ) 

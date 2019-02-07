@@ -12,7 +12,7 @@ import pyNN.utility.plotting as plot
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
-from utils.debug_utils import receive_spikes
+from utils.debug_utils import receive_spikes, image_slice_viewer
 from utils.spikes_utils import populate_debug_times, read_recording_settings, read_spikes_input, neuron_id
 
 from network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
@@ -43,7 +43,7 @@ def main(args):
 
     if args.vis:
         times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
-        cube_show_slider(times_debug)
+        image_slice_viewer(times_debug)
 
     n_total = cam_res * cam_res
 

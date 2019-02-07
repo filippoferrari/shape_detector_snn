@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import cv2
 import numpy as np
 
 
@@ -96,12 +97,8 @@ def populate_spikes(raw_spikes, cam_res, sim_time):
         else:
             out_neg[neuron_id(row, col, cam_res)].append(spike_time)
 
-    # out_pos_seq = [Sequence(i) for i in out_pos]
-    # out_neg_seq = [Sequence(i) for i in out_neg]
-
-    # return out_pos_seq, out_neg_seq
-
     return out_pos, out_neg
+
 
 def read_recording_settings(args):
     """
@@ -137,3 +134,73 @@ def read_spikes_input(raw_spikes, cam_res, sim_time):
     print('')
 
     return spikes_pos, spikes_neg
+
+
+def populate_spikes_from_video_frame(raw_spikes, cam_res, sim_time):
+    """
+    Populate array to pass to a SpikeSourceArray
+    
+    The input is a frame of size res*res
+
+    Output is a list of times for each neuron
+    [
+        [t_01, t_02, t_03] Neuron 0 spikes times
+        ... 
+        [t_n1, t_n2, t_n3, t_n4] Neuron n spikes times
+    ]
+    """
+    out_pos = []
+    out_neg = []
+    n_neurons = cam_res * cam_res
+
+    for _ in range(n_neurons):
+        out_pos.append(list())
+        out_neg.append(list())
+
+    for spike in raw_spikes:
+        parts = spike.split(',')
+        row, col, polarity = decode_spike(cam_res, int(parts[0]))
+        spike_time = float(parts[1])
+        if polarity:
+            out_pos[neuron_id(row, col, cam_res)].append(spike_time)
+        else:
+            out_neg[neuron_id(row, col, cam_res)].append(spike_time)
+
+    return out_pos, out_neg
+
+def read_spikes_from_video(filepath):
+    """
+    Read video file as input, instead of spikes
+    """
+    video_dev = cv2.VideoCapture(filepath)
+
+    fps = video_dev.get(cv2.CAP_PROP_FPS)
+    frame_time_ms = int(1000./float(fps))
+    
+    height = video_dev.get(cv2.CV_CAP_PROP_FRAME_HEIGHT)
+    width = video_dev.get(cv2.CV_CAP_PROP_FRAME_WDITH)
+
+    if height != width:
+        print('Width: {} - Height: {} - Not a square'.format(width, height))
+        video_dev.release()
+        exit()
+
+    res = width
+    n_neurons = res * res
+        
+    out_spikes = []
+    for _ in range(n_neurons):
+        out_spikes.append(list())
+    
+    for i in range(0, video_dev.get(cv2.CV_CAP_PROP_FRAME_COUNT)):
+        read_correctly, frame = video_dev.read()
+        if not read_correctly:
+            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+        for r in frame.shape[0]:
+            for c in frame.shape[1]:
+                if frame[r,c] != 255:
+                    out_spikes[neuron_id(r,c,res)].append(i*frame_time_ms)
+
+    return out_spikes, res

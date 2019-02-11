@@ -3,7 +3,7 @@
 from utils.spikes_utils import neuron_id, check_bounds
 
 
-def horizontal_connectivity_pos(r1, x, y, r2):
+def horizontal_connectivity_pos(res1, x, y, res2):
     """
     Return the positive connections of the following 
     receptive field
@@ -17,22 +17,22 @@ def horizontal_connectivity_pos(r1, x, y, r2):
        2
 
     """
-    tmp = []
+    out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Positive
-    tmp.append((neuron_id(x-1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y  , r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y  , res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def horizontal_connectivity_neg(r1, x, y, r2):
+def horizontal_connectivity_neg(res1, x, y, res2):
     """
     Return the negative connections of the following 
     receptive field
@@ -46,31 +46,30 @@ def horizontal_connectivity_neg(r1, x, y, r2):
        2
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Negative
-    tmp.append((neuron_id(x-2, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+2, y-1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-2, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+2, y-1, res1), neuron_id(x2 , y2, res2)))
     
-    tmp.append((neuron_id(x-2, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+2, y+1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-2, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+2, y+1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def vertical_connectivity_pos(r1, x, y, r2):
+def vertical_connectivity_pos(res1, x, y, res2):
     """
     Return the positive connections of the following 
     receptive field
@@ -84,23 +83,22 @@ def vertical_connectivity_pos(r1, x, y, r2):
        2     -     -
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Positive
-    tmp.append((neuron_id(x  , y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y+1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x  , y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y+1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def vertical_connectivity_neg(r1, x, y, r2):
+def vertical_connectivity_neg(res1, x, y, res2):
     """
     Return the negative connections of the following 
     receptive field
@@ -114,31 +112,30 @@ def vertical_connectivity_neg(r1, x, y, r2):
        2     -     -
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Negative
-    tmp.append((neuron_id(x-1, y-2, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y+2, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y-2, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y+2, res1), neuron_id(x2 , y2, res2)))
     
-    tmp.append((neuron_id(x+1, y-2, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+2, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x+1, y-2, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+2, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def left_diagonal_connectivity_pos(r1, x, y, r2):
+def left_diagonal_connectivity_pos(res1, x, y, res2):
     """
     Return the positive connections of the following 
     receptive field
@@ -152,23 +149,22 @@ def left_diagonal_connectivity_pos(r1, x, y, r2):
        2           -
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Positive
-    tmp.append((neuron_id(x-1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def left_diagonal_connectivity_neg(r1, x, y, r2):
+def left_diagonal_connectivity_neg(res1, x, y, res2):
     """
     Return the negative connections of the following 
     receptive field
@@ -182,31 +178,30 @@ def left_diagonal_connectivity_neg(r1, x, y, r2):
        2           -
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Negative
-    tmp.append((neuron_id(x-2, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+2, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-2, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+2, res1), neuron_id(x2 , y2, res2)))
     
-    tmp.append((neuron_id(x-1, y-2, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+2, y+1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y-2, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+2, y+1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def right_diagonal_connectivity_pos(r1, x, y, r2):
+def right_diagonal_connectivity_pos(res1, x, y, res2):
     """
     Return the positive connections of the following 
     receptive field
@@ -220,23 +215,22 @@ def right_diagonal_connectivity_pos(r1, x, y, r2):
        2     - 
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Positive
-    tmp.append((neuron_id(x-1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y-1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y-1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out
 
 
-def right_diagonal_connectivity_neg(r1, x, y, r2):
+def right_diagonal_connectivity_neg(res1, x, y, res2):
     """
     Return the negative connections of the following 
     receptive field
@@ -250,25 +244,24 @@ def right_diagonal_connectivity_neg(r1, x, y, r2):
        2     - 
 
     """
-    tmp = []
     out = []
 
-    x2 = x / (r1 / r2)
-    y2 = y / (r1 / r2)
+    x2 = x / (res1 / res2)
+    y2 = y / (res1 / res2)
 
     # Negative
-    tmp.append((neuron_id(x-2, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x-1, y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y-1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y-2, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-2, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x-1, y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y-1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y-2, res1), neuron_id(x2 , y2, res2)))
     
-    tmp.append((neuron_id(x-1, y+2, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x  , y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y+1, r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+1, y  , r1), neuron_id(x2 , y2, r2)))
-    tmp.append((neuron_id(x+2, y-1, r1), neuron_id(x2 , y2, r2)))
+    out.append((neuron_id(x-1, y+2, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x  , y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y+1, res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+1, y  , res1), neuron_id(x2 , y2, res2)))
+    out.append((neuron_id(x+2, y-1, res1), neuron_id(x2 , y2, res2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
 
     return out

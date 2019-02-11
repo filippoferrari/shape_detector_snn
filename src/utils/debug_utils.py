@@ -47,9 +47,9 @@ def image_slice_viewer(cube):
 
         def press(self, event):
             if event.key == 'right':
-                self.ind = (self.ind + 1) % self.slices
+                self.ind = (self.ind + 41) % self.slices
             elif event.key == 'left':
-                self.ind = (self.ind - 1) % self.slices
+                self.ind = (self.ind - 41) % self.slices
             self.slider.set_val(self.ind)
             self.update()
 

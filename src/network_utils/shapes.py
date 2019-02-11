@@ -22,15 +22,16 @@ def vert_connections(r1, x, y, stride, r2):
     +--------------------+
 
     """
-    tmp = []
+    out = []
 
     for i in range(-stride, stride + 1):
         # Left side
-        tmp.append((neuron_id(x-stride, y+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x-stride, y+i, r1), neuron_id(x, y, r2)))
         # Right side
-        tmp.append((neuron_id(x+stride, y+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+stride, y+i, r1), neuron_id(x, y, r2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
+    
     return out
 
 
@@ -54,15 +55,16 @@ def hor_connections(r1, x, y, stride, r2):
     +--------------------+
 
     """
-    tmp = []
+    out = []
 
     for i in range(-stride, stride + 1):
         # Top side 
-        tmp.append((neuron_id(x+i, y-stride, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y-stride, r1), neuron_id(x, y, r2)))
         # Bottom side
-        tmp.append((neuron_id(x+i, y+stride, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y+stride, r1), neuron_id(x, y, r2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
+
     return out
 
 
@@ -86,15 +88,16 @@ def left_diag_connections(r1, x, y, stride, r2):
     +--------------------+
 
     """
-    tmp = []
+    out = []
 
     for i in range(0, 2 * stride + 1):
         # Top side 
-        tmp.append((neuron_id(x-2*stride+i, y+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x-2*stride+i, y+i, r1), neuron_id(x, y, r2)))
         # Bottom side
-        tmp.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
+
     return out
 
 
@@ -118,13 +121,14 @@ def right_diag_connections(r1, x, y, stride, r2):
     +--------------------+
 
     """
-    tmp = []
+    out = []
 
     for i in range(0, 2 * stride + 1):
         # Top side 
-        tmp.append((neuron_id(x-2*stride+i, y-i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x-2*stride+i, y-i, r1), neuron_id(x, y, r2)))
         # Bottom side
-        tmp.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2)))
 
-    out = check_bounds(tmp, r1, r2)
+    out = [i for i in out if i[0] != []]
+
     return out

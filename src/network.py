@@ -171,62 +171,74 @@ def main(args):
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
             pos_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
     square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections), \
                                     receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
+
+    # Lateral inhibition
+    lateral_inh_connections = []
+    for i in range(0, n_total / (down_size * down_size)):
+        for j in range(0, n_total / (down_size * down_size)):
+            if i != j:
+                lateral_inh_connections.append((i, j))
+
+    lat_inh = sim.Projection(square_layer, square_layer, sim.FromListConnector(lateral_inh_connections), \
+                             receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=3, delay=1))
+
+
     square_layer.record(['spikes'])
 
 
-    ##########################################################
-    #### Diamond shape detector
-    diamond_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='diamond_layer')
-    # The sides of the diamond are of length 2 * stride + 1
-    stride = 2
+    # ##########################################################
+    # #### Diamond shape detector
+    # diamond_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='diamond_layer')
+    # # The sides of the diamond are of length 2 * stride + 1
+    # stride = 2
 
-    pos_connections = [] 
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += left_diag_connections(cam_res/2, x, y, stride, cam_res/2)
+    # pos_connections = [] 
+    # for x in range(0, cam_res, down_size):
+    #     for y in range(0, cam_res, down_size):
+    #         pos_connections += left_diag_connections(cam_res/2, x, y, stride, cam_res/2)
 
-    diamond_left = sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
-                                  receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+    # diamond_left = sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
+    #                               receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
-    pos_connections = [] 
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += right_diag_connections(cam_res/2, x, y, stride, cam_res/2)
+    # pos_connections = [] 
+    # for x in range(0, cam_res, down_size):
+    #     for y in range(0, cam_res, down_size):
+    #         pos_connections += right_diag_connections(cam_res/2, x, y, stride, cam_res/2)
 
-    diamond_right = sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
-                                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+    # diamond_right = sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
+    #                                receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
-    diamond_layer.record(['spikes'])
+    # diamond_layer.record(['spikes'])
 
 
     ##########################################################
     #### Run the simulation
     sim.run(sim_time)
 
-    neo = horizontal_layer.get_data(variables=['spikes'])
-    horizontal_spikes = neo.segments[0].spiketrains
+    # neo = horizontal_layer.get_data(variables=['spikes'])
+    # horizontal_spikes = neo.segments[0].spiketrains
 
-    neo = vertical_layer.get_data(variables=['spikes'])
-    vertical_spikes = neo.segments[0].spiketrains
+    # neo = vertical_layer.get_data(variables=['spikes'])
+    # vertical_spikes = neo.segments[0].spiketrains
     
-    neo = left_diag_layer.get_data(variables=['spikes'])
-    left_diag_spikes = neo.segments[0].spiketrains
+    # neo = left_diag_layer.get_data(variables=['spikes'])
+    # left_diag_spikes = neo.segments[0].spiketrains
     
-    neo = right_diag_layer.get_data(variables=['spikes'])
-    right_diag_spikes = neo.segments[0].spiketrains
+    # neo = right_diag_layer.get_data(variables=['spikes'])
+    # right_diag_spikes = neo.segments[0].spiketrains
 
     neo = square_layer.get_data(variables=['spikes'])
     square_spikes = neo.segments[0].spiketrains
 
-    neo = diamond_layer.get_data(variables=['spikes'])
-    diamond_spikes = neo.segments[0].spiketrains
+    # neo = diamond_layer.get_data(variables=['spikes'])
+    # diamond_spikes = neo.segments[0].spiketrains
 
     sim.end()
 
@@ -234,23 +246,23 @@ def main(args):
     ##########################################################
     #### Plot the receptive fields
     # line_properties = [{'color': 'red', 'markersize': 2}, {'color': 'blue', 'markersize': 2}]
-    plot.Figure(
-        # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
-        # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
-        # xlim=(0, sim_time), line_properties=line_properties), 
-        # plot spikes (or in this case spike)
-        plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        title='Receptive fields',
-        annotations='Simulated with {}'.format(sim.name())
-    ) 
-    matplotlib.show()
+    # plot.Figure(
+    #     # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
+    #     # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
+    #     # xlim=(0, sim_time), line_properties=line_properties), 
+    #     # plot spikes (or in this case spike)
+    #     plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+    #     plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
+    #     plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+    #     plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+    #     title='Receptive fields',
+    #     annotations='Simulated with {}'.format(sim.name())
+    # ) 
+    # matplotlib.show()
     
     plot.Figure(
         plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        # plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         title='Shape detector',
         annotations='Simulated with {}'.format(sim.name())
     )

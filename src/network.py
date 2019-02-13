@@ -51,13 +51,13 @@ def main(args):
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
 
     # Some values for the network 
-    exc_weight = 1
+    exc_weight = 5
     inh_weight = 1
 
     exc_delay = 1
     inh_delay = 1
 
-    down_size = 2
+    down_size = 1
 
     ##########################################################
     #### Set the first layers of the network
@@ -151,60 +151,70 @@ def main(args):
 
     ##########################################################
     #### Square shape detector
-    square_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='square_layer')
+    square_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='square_layer')
     # The sides of the square are of length 2 * stride + 1
     stride = 2
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += hor_connections(cam_res/2, x, y, stride, cam_res/2)
-            neg_connections += hor_connections(cam_res/2, x, y, stride, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+            neg_connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
     square_hor = sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(pos_connections), \
                                 receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     pos_connections = [] 
     neg_connections = []
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += vert_connections(cam_res/2, x, y, stride, cam_res/2)
-            neg_connections += vert_connections(cam_res/2, x, y, stride, cam_res/2)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            pos_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+            neg_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
     square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections), \
                                     receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
+    # Lateral inhibition
+    lateral_inh_connections = []
+    for i in range(0, n_total / (down_size * down_size)):
+        for j in range(0, n_total / (down_size * down_size)):
+            if i != j:
+                lateral_inh_connections.append((i, j))
+
+    lat_inh = sim.Projection(square_layer, square_layer, sim.FromListConnector(lateral_inh_connections), \
+                             receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=3, delay=1))
+
     square_layer.record(['spikes'])
 
 
-    ##########################################################
-    #### Diamond shape detector
-    diamond_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='diamond_layer')
-    # The sides of the diamond are of length 2 * stride + 1
-    stride = 2
+    # ##########################################################
+    # #### Diamond shape detector
+    # diamond_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='diamond_layer')
+    # # The sides of the diamond are of length 2 * stride + 1
+    # stride = 2
 
-    pos_connections = [] 
-    neg_connections = []
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += left_diag_connections(cam_res/2, x, y, stride, cam_res/2)
-            neg_connections += left_diag_connections(cam_res/2, x, y, stride, cam_res/2)
+    # pos_connections = [] 
+    # neg_connections = []
+    # for x in range(0, cam_res, down_size):
+    #     for y in range(0, cam_res, down_size):
+    #         pos_connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    #         neg_connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    diamond_left = sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
-                                  receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+    # diamond_left = sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
+    #                               receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
-    pos_connections = [] 
-    neg_connections = []
-    for x in range(0, cam_res/2):
-        for y in range(0, cam_res/2):
-            pos_connections += right_diag_connections(cam_res/2, x, y, stride, cam_res/2)
-            neg_connections += right_diag_connections(cam_res/2, x, y, stride, cam_res/2)
+    # pos_connections = [] 
+    # neg_connections = []
+    # for x in range(0, cam_res, down_size):
+    #     for y in range(0, cam_res, down_size):
+    #         pos_connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    #         neg_connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    diamond_right = sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
-                                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+    # diamond_right = sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
+    #                                receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
-    diamond_layer.record(['spikes'])
+    # diamond_layer.record(['spikes'])
 
 
     ##########################################################
@@ -223,8 +233,8 @@ def main(args):
     neo = right_diag_layer.get_data(variables=['spikes'])
     right_diag_spikes = neo.segments[0].spiketrains
 
-    # neo = square_layer.get_data(variables=['spikes'])
-    # square_spikes = neo.segments[0].spiketrains
+    neo = square_layer.get_data(variables=['spikes'])
+    square_spikes = neo.segments[0].spiketrains
 
     # neo = diamond_layer.get_data(variables=['spikes'])
     # diamond_spikes = neo.segments[0].spiketrains
@@ -251,6 +261,13 @@ def main(args):
     ) 
     matplotlib.show()
     
+    plot.Figure(
+        plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        # plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        title='Shape detectors',
+        annotations='Simulated with {}'.format(sim.name())
+    ) 
+    matplotlib.show()
 
 if __name__ == '__main__':
     args_parsed = parse_args()

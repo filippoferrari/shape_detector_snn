@@ -316,3 +316,6 @@ recordings/**
 
 *.avi
 *.mp4
+*.jpg
+*.bmp
+*.png

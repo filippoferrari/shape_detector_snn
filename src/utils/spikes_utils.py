@@ -154,6 +154,10 @@ def read_spikes_from_video(filepath):
     """
     video_dev = cv2.VideoCapture(filepath)
 
+    if not video_dev.isOpened():
+        print('Video file could not be opened:', filepath)
+        exit()
+
     # Get video settings
     fps = video_dev.get(cv2.CAP_PROP_FPS)
     frame_time_ms = int(1000./float(fps))

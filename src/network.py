@@ -167,7 +167,7 @@ def main(args):
         for y in range(0, cam_res/down_size):
             pos_connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    square_hor = sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(pos_connections), \
+    square_hor = sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(pos_connections, column_names=['pre', 'post', 'weight', 'delay']), \
                                 receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     pos_connections = [] 
@@ -175,7 +175,7 @@ def main(args):
         for y in range(0, cam_res/down_size):
             pos_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections), \
+    square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections, column_names=['pre', 'post', 'weight', 'delay']), \
                                     receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
 
@@ -306,7 +306,7 @@ def display_video(filepath, spikes, stride):
         for j in range(i*frame_time_ms, (i+1)*frame_time_ms):
             tmp.append(spikes.get(j))
 
-        tmp = list(itertools.chain.from_iterable([k for k in tmp if k]))
+        tmp = sorted(list(itertools.chain.from_iterable([k for k in tmp if k])))
 
         if tmp and len(tmp) > 0:
             spike = tmp[len(tmp)//2] # take median for now 

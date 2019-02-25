@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from utils.constants import GAUSSIAN_WEIGHTS
 from utils.spikes_utils import neuron_id, check_bounds
+
 
 def vert_connections(r1, x, y, stride, r2):
     """
@@ -24,11 +26,17 @@ def vert_connections(r1, x, y, stride, r2):
     """
     out = []
 
-    for i in range(-stride, stride + 1):
-        # Left side
-        out.append((neuron_id(x-stride, y+i, r1), neuron_id(x, y, r2)))
-        # Right side
-        out.append((neuron_id(x+stride, y+i, r1), neuron_id(x, y, r2)))
+    for j, w in enumerate(GAUSSIAN_WEIGHTS):
+        gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+        for i in range(-stride, stride + 1):
+            # Left side
+            pre_x = x-stride+gaussians[j]
+            pre_y = y+i
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
+            # Right side
+            pre_x = x+stride+gaussians[j]
+            pre_y = y+i
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
 
     out = [i for i in out if i[0] != []]
     
@@ -56,12 +64,18 @@ def hor_connections(r1, x, y, stride, r2):
 
     """
     out = []
-
-    for i in range(-stride, stride + 1):
-        # Top side 
-        out.append((neuron_id(x+i, y-stride, r1), neuron_id(x, y, r2)))
-        # Bottom side
-        out.append((neuron_id(x+i, y+stride, r1), neuron_id(x, y, r2)))
+    
+    for j, w in enumerate(GAUSSIAN_WEIGHTS):
+        gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+        for i in range(-stride, stride + 1):
+            # Top side 
+            pre_x = x+i
+            pre_y = y-stride+gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
+            # Bottom side
+            pre_x = x+i
+            pre_y = y+stride+gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
 
     out = [i for i in out if i[0] != []]
 

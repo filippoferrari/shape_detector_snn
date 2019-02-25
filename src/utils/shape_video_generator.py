@@ -8,7 +8,7 @@ def main(args):
     height = 32
     FPS = 24
     seconds = 10
-    radius = 5
+    radius = 7
     bar_width = 1
     paint_h = int(height/2)
     colour = (255, 255, 255)
@@ -23,7 +23,7 @@ def main(args):
             if args.shape == 'circle':
                 cv2.circle(frame, (paint_x, paint_h), radius, colour, 1)
             elif args.shape == 'square':
-                cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+radius-1, paint_h+radius//2), colour, -1) 
+                cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+radius-1, paint_h+radius//2), colour, 1) 
             elif args.shape == 'vertical':
                 cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+bar_width, paint_h+radius//2), colour, -1) 
 

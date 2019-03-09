@@ -26,6 +26,7 @@ from network_utils.shapes import hor_connections, vert_connections, left_diag_co
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-D', '--dont_save', action='store_true', default=False, help='Do not save results as video')
     parser.add_argument('-O', '--live_output', action='store_true', default=False, help='Show visualisations')
     parser.add_argument('-V', '--vis', action='store_true', default=False, help='Show visualisations')
 
@@ -222,17 +223,17 @@ def main(args):
     #### Run the simulation
     sim.run(sim_time)
 
-    # neo = horizontal_layer.get_data(variables=['spikes'])
-    # horizontal_spikes = neo.segments[0].spiketrains
+    neo = horizontal_layer.get_data(variables=['spikes'])
+    horizontal_spikes = neo.segments[0].spiketrains
 
-    # neo = vertical_layer.get_data(variables=['spikes'])
-    # vertical_spikes = neo.segments[0].spiketrains
+    neo = vertical_layer.get_data(variables=['spikes'])
+    vertical_spikes = neo.segments[0].spiketrains
     
-    # neo = left_diag_layer.get_data(variables=['spikes'])
-    # left_diag_spikes = neo.segments[0].spiketrains
+    neo = left_diag_layer.get_data(variables=['spikes'])
+    left_diag_spikes = neo.segments[0].spiketrains
     
-    # neo = right_diag_layer.get_data(variables=['spikes'])
-    # right_diag_spikes = neo.segments[0].spiketrains
+    neo = right_diag_layer.get_data(variables=['spikes'])
+    right_diag_spikes = neo.segments[0].spiketrains
 
     neo = square_layer.get_data(variables=['spikes'])
     square_spikes = neo.segments[0].spiketrains
@@ -246,19 +247,19 @@ def main(args):
     ##########################################################
     #### Plot the receptive fields
     # line_properties = [{'color': 'red', 'markersize': 2}, {'color': 'blue', 'markersize': 2}]
-    # plot.Figure(
-    #     # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
-    #     # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
-    #     # xlim=(0, sim_time), line_properties=line_properties), 
-    #     # plot spikes (or in this case spike)
-    #     plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-    #     plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
-    #     plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-    #     plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-    #     title='Receptive fields',
-    #     annotations='Simulated with {}'.format(sim.name())
-    # ) 
-    # matplotlib.show()
+    plot.Figure(
+        # plot.Panel(v, ylabel="Membrane potential (mV)", data_labels=[test_neuron.label], yticks=True, xlim=(0, sim_time)),
+        # plot.Panel(pos_spikes, ylabel='Neuron idx', yticks=True, xticks=True, markersize=5, xlim=(0, sim_time)),#, \
+        # xlim=(0, sim_time), line_properties=line_properties), 
+        # plot spikes (or in this case spike)
+        plot.Panel(horizontal_spikes, ylabel='Neuron idx', yticks=True, xlabel='Horizontal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
+        title='Receptive fields',
+        annotations='Simulated with {}'.format(sim.name())
+    ) 
+    matplotlib.show()
     
     plot.Figure(
         plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
@@ -276,10 +277,11 @@ def main(args):
                 spiking_times[int(spike)] = []
             spiking_times[int(spike)].append(neuron)
 
-    display_video(args.input, spiking_times, stride)
+    if args.dont_save:
+        save_video(args.input, spiking_times, stride)
 
 
-def display_video(filepath, spikes, stride):
+def save_video(filepath, spikes, stride):
     video_dev = cv2.VideoCapture(filepath)
     if not video_dev.isOpened():
         print('Video file could not be opened:', filepath)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import cv2
 import numpy as np
 
 
@@ -7,20 +8,26 @@ def neuron_id(row, col, res):
     """ 
     Convert x,y pixel coordinate to neuron id coordinate
     """
-    return row * res + col
+    if check_bounds(row, col, res):
+        return row * res + col
+    else:
+        return []
 
 
-def check_bounds(tmp, r1, r2):
+def coord_from_neuron(neuron, res):
+    """ 
+    Convert neuron id to neuron x,y pixel coordinate
     """
-    tmp is a tuple of neuron ids (id1, id2) in two differente layers
-    r1 is the resolution of the first layer
-    r2 is the resolution of the second layer
+    col = neuron % res
+    row = (neuron - col) // res
+    return row, col
+
+
+def check_bounds(x, y, res):
     """
-    out = []
-    for i in tmp:
-        if i[0] >= 0 and i[0] < r1*r1 and i[1] >= 0 and i[1] < r2*r2:
-            out.append(i)
-    return out
+    Check if (x,y) is inside the square res x res
+    """
+    return x >= 0 and x < res and y >= 0 and y < res
 
 
 def decode_spike(cam_res, key):
@@ -40,7 +47,6 @@ def decode_spike(cam_res, key):
     return row, col, polarity
 
 
-# Debug method to visualise the spikes
 def populate_debug_times(raw_spikes, cam_res, sim_time):
     """
     Create cube with spikes for visualisation purposes
@@ -96,12 +102,8 @@ def populate_spikes(raw_spikes, cam_res, sim_time):
         else:
             out_neg[neuron_id(row, col, cam_res)].append(spike_time)
 
-    # out_pos_seq = [Sequence(i) for i in out_pos]
-    # out_neg_seq = [Sequence(i) for i in out_neg]
-
-    # return out_pos_seq, out_neg_seq
-
     return out_pos, out_neg
+
 
 def read_recording_settings(args):
     """
@@ -137,3 +139,91 @@ def read_spikes_input(raw_spikes, cam_res, sim_time):
     print('')
 
     return spikes_pos, spikes_neg
+
+
+def read_spikes_from_video(filepath):
+    """
+    Read video file as input, instead of spikes
+    
+    Output is a list of times for each neuron
+    [
+        [t_01, t_02, t_03] Neuron 0 spikes times
+        ... 
+        [t_n1, t_n2, t_n3, t_n4] Neuron n spikes times
+    ]
+    """
+    video_dev = cv2.VideoCapture(filepath)
+
+    if not video_dev.isOpened():
+        print('Video file could not be opened:', filepath)
+        exit()
+
+    # Get video settings
+    fps = video_dev.get(cv2.CAP_PROP_FPS)
+    frame_time_ms = int(1000./float(fps))
+    height = int(video_dev.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(video_dev.get(cv2.CAP_PROP_FRAME_WIDTH))
+    n_frames = int(video_dev.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # Video needs to be a square
+    if height != width:
+        print('Width: {} - Height: {} - Not a square'.format(width, height))
+        video_dev.release()
+        exit()
+
+    res = width
+    n_neurons = res * res
+    sim_time = n_frames * frame_time_ms
+
+    # Initialise spikes lists
+    pos_spikes = []
+    neg_spikes = []
+    for _ in range(n_neurons):
+        pos_spikes.append(list())
+        neg_spikes.append(list())
+
+    
+    # For each frame
+    previous_frame = None
+    for i in range(0, n_frames):
+        read_correctly, frame = video_dev.read()
+        if not read_correctly:
+            break
+        
+        # Convert to grayscale
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+        # If a pixel is not zero, the corresponding neuron will spike
+        for row in range(0, frame.shape[0]):
+            for column in range(0, frame.shape[1]):
+                if frame[row,column] > 128:
+                    pos_spikes[neuron_id(row,column,res)].append(i * frame_time_ms)
+                if previous_frame is not None and previous_frame[row,column] > 128 and frame[row,column] < 128:
+                    neg_spikes[neuron_id(row,column,res)].append(i * frame_time_ms)
+
+                # if previous_frame is not None:
+                #     # Current pixel moved from dark to bright
+                #     if frame[row,column] > 128 and previous_frame[row,column] < 128:
+                #         pos_spikes[neuron_id(row,column,res)].append(i * frame_time_ms)
+                #     # Current pixel went from bright to dark
+                #     elif previous_frame[row,column] > 128 and frame[row,column] < 128:
+                #         neg_spikes[neuron_id(row,column,res)].append(i * frame_time_ms)
+                # elif:
+                #     if frame[row,column] > 128:
+                #         pos_spikes[neuron_id(row,column,res)].append(i * frame_time_ms)
+
+        if i > 0:
+            previous_frame = frame.copy()
+
+    return pos_spikes, neg_spikes, res, sim_time
+
+
+def populate_debug_times_from_video(spikes, cam_res, sim_time):
+    out = np.zeros([sim_time, cam_res, cam_res])
+
+    for i, neuron in enumerate(spikes):
+        for spike in neuron:
+            row, col = coord_from_neuron(i, cam_res)
+            out[spike, row, col] = 1
+    
+    return out

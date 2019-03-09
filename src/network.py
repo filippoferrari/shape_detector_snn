@@ -3,17 +3,19 @@
 from __future__ import print_function
 
 import argparse
-
+import itertools
 import matplotlib.pyplot as matplotlib
 import numpy as np
+
+import cv2
 
 import pyNN.utility.plotting as plot
 
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
-from utils.debug_utils import receive_spikes
-from utils.spikes_utils import populate_debug_times, read_recording_settings, read_spikes_input, neuron_id
+from utils.debug_utils import receive_spikes, image_slice_viewer
+from utils.spikes_utils import read_spikes_from_video, populate_debug_times_from_video, coord_from_neuron#, read_recording_settings, read_spikes_input, neuron_id
 
 from network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
                                            vertical_connectivity_pos, vertical_connectivity_neg, \
@@ -24,6 +26,7 @@ from network_utils.shapes import hor_connections, vert_connections, left_diag_co
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-D', '--dont_save', action='store_true', default=False, help='Do not save results as video')
     parser.add_argument('-O', '--live_output', action='store_true', default=False, help='Show visualisations')
     parser.add_argument('-V', '--vis', action='store_true', default=False, help='Show visualisations')
 
@@ -35,15 +38,20 @@ def parse_args():
 
 
 def main(args):
-    # Read the input file
-    raw_spikes, cam_res, sim_time = read_recording_settings(args)
+    # # Read the input file
+    # raw_spikes, cam_res, sim_time = read_recording_settings(args)
 
-    # Spikes decoded
-    spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
+    # # Spikes decoded
+    # spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
+
+    spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
 
     if args.vis:
-        times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
-        cube_show_slider(times_debug)
+        # times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
+        times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
+        image_slice_viewer(times_debug)
+        times_debug = populate_debug_times_from_video(spikes_neg, cam_res, sim_time)
+        image_slice_viewer(times_debug)
 
     n_total = cam_res * cam_res
 
@@ -51,7 +59,7 @@ def main(args):
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
 
     # Some values for the network 
-    exc_weight = 5
+    exc_weight = 3
     inh_weight = 1
 
     exc_delay = 1
@@ -151,29 +159,26 @@ def main(args):
 
     ##########################################################
     #### Square shape detector
-    square_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='square_layer')
+    square_layer = sim.Population(n_total / (down_size * down_size), sim.IF_curr_exp(), label='square_layer')
     # The sides of the square are of length 2 * stride + 1
     stride = 2
 
     pos_connections = [] 
-    neg_connections = []
-    for x in range(0, cam_res, down_size):
-        for y in range(0, cam_res, down_size):
+    for x in range(0, cam_res/down_size):
+        for y in range(0, cam_res/down_size):
             pos_connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
-            neg_connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    square_hor = sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(pos_connections), \
+    square_hor = sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(pos_connections, column_names=['pre', 'post', 'weight', 'delay']), \
                                 receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     pos_connections = [] 
-    neg_connections = []
-    for x in range(0, cam_res, down_size):
-        for y in range(0, cam_res, down_size):
+    for x in range(0, cam_res/down_size):
+        for y in range(0, cam_res/down_size):
             pos_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
-            neg_connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
 
-    square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections), \
+    square_vert = sim.Projection(vertical_layer, square_layer, sim.FromListConnector(pos_connections, column_names=['pre', 'post', 'weight', 'delay']), \
                                     receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+
 
     # Lateral inhibition
     lateral_inh_connections = []
@@ -185,31 +190,28 @@ def main(args):
     lat_inh = sim.Projection(square_layer, square_layer, sim.FromListConnector(lateral_inh_connections), \
                              receptor_type='inhibitory', synapse_type=sim.StaticSynapse(weight=3, delay=1))
 
+
     square_layer.record(['spikes'])
 
 
     # ##########################################################
     # #### Diamond shape detector
-    # diamond_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='diamond_layer')
+    # diamond_layer = sim.Population(n_total/4, sim.IF_curr_exp(), label='diamond_layer')
     # # The sides of the diamond are of length 2 * stride + 1
     # stride = 2
 
     # pos_connections = [] 
-    # neg_connections = []
     # for x in range(0, cam_res, down_size):
     #     for y in range(0, cam_res, down_size):
-    #         pos_connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
-    #         neg_connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    #         pos_connections += left_diag_connections(cam_res/2, x, y, stride, cam_res/2)
 
     # diamond_left = sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
     #                               receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
 
     # pos_connections = [] 
-    # neg_connections = []
     # for x in range(0, cam_res, down_size):
     #     for y in range(0, cam_res, down_size):
-    #         pos_connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
-    #         neg_connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    #         pos_connections += right_diag_connections(cam_res/2, x, y, stride, cam_res/2)
 
     # diamond_right = sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(pos_connections), \
     #                                receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
@@ -254,8 +256,6 @@ def main(args):
         plot.Panel(vertical_spikes, ylabel='Neuron idx', yticks=True, xlabel='Vertical', xticks=True, markersize=2, xlim=(0, sim_time)), 
         plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
         plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        # plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        # plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         title='Receptive fields',
         annotations='Simulated with {}'.format(sim.name())
     ) 
@@ -264,10 +264,65 @@ def main(args):
     plot.Figure(
         plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         # plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
-        title='Shape detectors',
+        title='Shape detector',
         annotations='Simulated with {}'.format(sim.name())
-    ) 
+    )
     matplotlib.show()
+
+    # Process spiketrains for the square
+    spiking_times = {}
+    for neuron, spikes in enumerate(square_spikes):
+        for spike in spikes:
+            if not int(spike) in spiking_times:
+                spiking_times[int(spike)] = []
+            spiking_times[int(spike)].append(neuron)
+
+    if args.dont_save:
+        save_video(args.input, spiking_times, stride)
+
+
+def save_video(filepath, spikes, stride):
+    video_dev = cv2.VideoCapture(filepath)
+    if not video_dev.isOpened():
+        print('Video file could not be opened:', filepath)
+        exit()
+
+    fps = video_dev.get(cv2.CAP_PROP_FPS)
+    frame_time_ms = int(1000./float(fps))
+    height = int(video_dev.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(video_dev.get(cv2.CAP_PROP_FRAME_WIDTH))
+    n_frames = int(video_dev.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    radius = stride // 2
+
+    fourcc = cv2.VideoWriter_fourcc(*'MP42')
+    video_output = cv2.VideoWriter(filepath.strip('.txt') + '_result.avi', fourcc, float(fps), (width, height))
+
+    for i in range(0, n_frames):
+        read_correctly, frame = video_dev.read()
+        if not read_correctly:
+            break
+
+        # Accumulate all spikes occurring between frames
+        tmp = []
+        for j in range(i*frame_time_ms, (i+1)*frame_time_ms):
+            tmp.append(spikes.get(j))
+
+        tmp = sorted(list(itertools.chain.from_iterable([k for k in tmp if k])))
+
+        if tmp and len(tmp) > 0:
+            spike = tmp[len(tmp)//2] # take median for now 
+            row, col = coord_from_neuron(spike, height)
+            cv2.rectangle(frame, (col-radius, row-radius), (col+radius, row+radius), (0, 0, 255), 1) 
+
+        video_output.write(frame)
+        # cv2.imshow('frame', frame)
+
+        cv2.imwrite('output/frame_{0:05d}.png'.format(i),frame)
+
+    video_dev.release()
+    video_output.release()
+
 
 if __name__ == '__main__':
     args_parsed = parse_args()

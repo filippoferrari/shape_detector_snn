@@ -40,3 +40,5 @@ RGB   = 'RGB'
 VIDEO = 'VIDEO'
 
 IMAGE_TYPES = ['png', 'jpeg', 'jpg']
+
+GAUSSIAN_WEIGHTS = [0.054, 0.242, 0.3989, 0.242, 0.054]

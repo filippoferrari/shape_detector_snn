@@ -28,6 +28,19 @@ def main(args):
                 cv2.rectangle(frame, (paint_h-radius//2, paint_x), (paint_h+radius//2 , paint_x+radius-1), colour, 1) 
             elif args.shape == 'vertical':
                 cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+bar_width, paint_h+radius//2), colour, -1) 
+            elif args.shape == 'diamond_lr':
+                c = paint_x + radius
+                r = radius//2
+                pts = np.array([[c,paint_h+r],[c+r, paint_h],[c,paint_h-r], [c-r,paint_h]], np.int32)
+                pts = pts.reshape((-1,1,2))
+                cv2.polylines(frame,[pts],True,colour)
+            elif args.shape == 'diamond_tb':
+                c = paint_x + radius
+                r = radius//2
+                pts = np.array([[paint_h+r,c,],[paint_h,c+r],[paint_h-r,c], [paint_h,c-r]], np.int32)
+                pts = pts.reshape((-1,1,2))
+                cv2.polylines(frame,[pts],True,colour)
+
 
             video.write(frame)
 

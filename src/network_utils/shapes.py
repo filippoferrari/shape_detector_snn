@@ -17,9 +17,9 @@ def vert_connections(r1, x, y, stride, r2):
     |
     |
     |  .stride   .
-    |  |
-    |  |  (x,y)
-    |  |
+    |  |         |
+    |  |  (x,y)  |
+    |  |         |
     |  .         .
     +--------------------+
 
@@ -54,6 +54,10 @@ def hor_connections(r1, x, y, stride, r2):
     neurons which model the horizontal sides of a square of size 
     2 * stride + 1 in the square r1 x r1
 
+    In order to detect squares of different sizes, 5 sides are 
+    computed, and the neurons on each of them have weights 
+    determined by a gaussian distribution
+
                x
     +--------------------+
     |
@@ -62,7 +66,7 @@ def hor_connections(r1, x, y, stride, r2):
     |            stride
     |     (x,y)
     |   
-    |  .         .
+    |  ._________.
     +--------------------+
 
     """
@@ -112,9 +116,9 @@ def left_diag_connections(r1, x, y, stride, r2):
 
     for i in range(0, 2 * stride + 1):
         # Top side 
-        out.append((neuron_id(x-2*stride+i, y+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x-2*stride+i, y+i, r1), neuron_id(x, y, r2), 1, 1))
         # Bottom side
-        out.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2), 1, 1))
 
     out = [i for i in out if i[0] != []]
 
@@ -145,9 +149,9 @@ def right_diag_connections(r1, x, y, stride, r2):
 
     for i in range(0, 2 * stride + 1):
         # Top side 
-        out.append((neuron_id(x-2*stride+i, y-i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x-2*stride+i, y-i, r1), neuron_id(x, y, r2), 1, 1))
         # Bottom side
-        out.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2)))
+        out.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2), 1, 1))
 
     out = [i for i in out if i[0] != []]
 

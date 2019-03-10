@@ -24,13 +24,51 @@ def main(args):
             if tot_frames > 5*FPS:
                 break
 
-            paint_x = random.randint(0, width-radius-1)
-            paint_y = random.randint(0, width-radius-1)
-            print(radius, paint_x, paint_x+radius, paint_y, paint_y+radius)
-            for i in range(frames):            
-                frame = np.zeros((height, width, 3), dtype=np.uint8)
-                cv2.rectangle(frame, (paint_x, paint_y), (paint_x+radius, paint_y+radius), colour, 1) 
-                video.write(frame)
+            if 'square' in args.shape and 'diamond' not in args.shape:
+                paint_x = random.randint(0, width-radius-1)
+                paint_y = random.randint(0, width-radius-1)
+                for i in range(frames):            
+                    frame = np.zeros((height, width, 3), dtype=np.uint8)
+                    cv2.rectangle(frame, (paint_x, paint_y), (paint_x+radius, paint_y+radius), colour, 1) 
+                    video.write(frame)
+            elif 'diamond' in args.shape and 'square' not in args.shape:
+                r = radius//2 + 1
+                paint_x = random.randint(radius, width-radius-1)
+                paint_y = random.randint(radius, width-radius-1)
+                c = paint_x #+ radius
+                pts = np.array([[c,paint_y+r],[c+r, paint_y],[c,paint_y-r], [c-r,paint_y]], np.int32)
+                pts = pts.reshape((-1,1,2))
+                for i in range(frames):
+                    frame = np.zeros((height, width, 3), dtype=np.uint8)      
+                    cv2.polylines(frame,[pts],True,colour)
+                    video.write(frame)
+            elif 'square' in args.shape and 'diamond' in args.shape:
+                # Diamond
+                r = radius//2 + 1
+                paint_x = random.randint(radius, width-radius-1)
+                paint_y = random.randint(radius, width-radius-1)
+                c = paint_x #+ radius
+                pts = np.array([[c,paint_y+r],[c+r, paint_y],[c,paint_y-r], [c-r,paint_y]], np.int32)
+                pts = pts.reshape((-1,1,2))
+
+                # Square
+                while True:
+                    paint_x_s = random.randint(0, width-radius-1)
+                    paint_y_s = random.randint(0, width-radius-1)
+                    if len(list(set(range(paint_x_s,paint_x_s+radius)) & set(range(c-r,c+r)))) == 0:
+                        break
+                    if len(list(set(range(paint_y_s,paint_y_s+radius)) & set(range(paint_y-r,paint_y+r)))) == 0:
+                        break
+            
+                for i in range(frames):            
+                    frame = np.zeros((height, width, 3), dtype=np.uint8)
+                    # Square
+                    cv2.rectangle(frame, (paint_x_s+1, paint_y_s+1), (paint_x_s+radius-1, paint_y_s+radius-1), colour, 1) 
+                    # Diamond
+                    cv2.polylines(frame,[pts],True,colour)
+                    video.write(frame)
+
+                pass
 
             tot_frames += frames
 

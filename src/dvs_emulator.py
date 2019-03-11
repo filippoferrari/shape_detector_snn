@@ -20,69 +20,76 @@ class DVS_Emulator():
                  output_video=None, 
                  polarity=MERGED_POLARITY, output_type=OUTPUT_TIME_BIN_THR, 
                  inhibition=True):
+
         self.cam_res = cam_res
         self.shape = (self.cam_res, self.cam_res)
-        self.channel = RGB
-
-        self.data_shift = uint8(log2(self.cam_res))
-        self.up_down_shift = uint8(2*self.data_shift)
-        self.data_mask = uint8(self.cam_res - 1)
+        if video_device == 'webcam':
+            self.channel = RGB
+        else:
+            self.channel = VIDEO
+        self.sim_time = 0
 
         self.polarity = POLARITY_DICT[polarity]
         self.output_type = output_type
+        self.inhibition = inhibition
 
-        self.output_spikes = []
-        self.sim_time = 0
+        self.video_device = video_device
+        self.output_video = output_video
+
+    def read_video_source(self):
+        data_shift = uint8(log2(self.cam_res))
+        up_down_shift = uint8(2*data_shift)
+        data_mask = uint8(self.cam_res - 1)
+
+
+        output_spikes = []
+        sim_time = 0
 
         # Default values from pyDVS
-        self.history_weight = 1.0
-        self.threshold = 12  # ~ 0.05*255
-        self.max_threshold = 180  # 12*15 ~ 0.7*255
+        history_weight = 1.0
+        threshold = 12  # ~ 0.05*255
+        max_threshold = 180  # 12*15 ~ 0.7*255
 
-        self.curr     = np.zeros(self.shape,     dtype=int16)
-        self.ref      = 128*np.ones(self.shape,  dtype=int16)
-        self.spikes   = np.zeros(self.shape,     dtype=int16)
-        self.diff     = np.zeros(self.shape,     dtype=int16)
-        self.abs_diff = np.zeros(self.shape,     dtype=int16)
+        curr     = np.zeros(self.shape,     dtype=int16)
+        ref      = 128*np.ones(self.shape,  dtype=int16)
+        spikes   = np.zeros(self.shape,     dtype=int16)
+        diff     = np.zeros(self.shape,     dtype=int16)
+        abs_diff = np.zeros(self.shape,     dtype=int16)
 
         # just to see things in a window
-        self.spk_img  = np.zeros((self.cam_res, self.cam_res, 3), uint8)
+        spk_img  = np.zeros((self.cam_res, self.cam_res, 3), uint8)
 
-        self.num_bits = 6   # how many bits are used to represent exceeded thresholds
-        self.num_active_bits = 2  # how many of bits are active
-        self.log2_table = gs.generate_log2_table(self.num_active_bits, self.num_bits)[self.num_active_bits - 1]
-        self.spike_lists = None
-        self.pos_spks = None
-        self.neg_spks = None
-        self.max_diff = 0
+        num_bits = 6   # how many bits are used to represent exceeded thresholds
+        num_active_bits = 2  # how many of bits are active
+        log2_table = gs.generate_log2_table(num_active_bits, num_bits)[num_active_bits - 1]
+        spike_lists = None
+        pos_spks = None
+        neg_spks = None
+        max_diff = 0
 
         # -------------------------------------------------------------------- #
         # inhibition related                                                   #
 
-        self.inh_width = 2
-        self.is_inh_on = inhibition
-        self.inh_coords = gs.generate_inh_coords(self.cam_res, self.cam_res, self.inh_width)
+        inh_width = 2
+        is_inh_on = self.inhibition
+        inh_coords = gs.generate_inh_coords(self.cam_res, self.cam_res, inh_width)
 
-        if video_device != 'webcam':
-            self.video_dev = cv2.VideoCapture(video_device)
+        if self.video_device != 'webcam':
+            video_dev = cv2.VideoCapture(self.video_device)
             self.channel = 'VIDEO'
-            print('File opened correctly:', self.video_dev.isOpened())
+            print('File opened correctly:', video_dev.isOpened())
         else:
-            self.video_dev = cv2.VideoCapture(0)  # webcam
-            print('Webcam working:', self.video_dev.isOpened())
+            video_dev = cv2.VideoCapture(0)  # webcam
+            print('Webcam working:', video_dev.isOpened())
 
-        self.fps = self.video_dev.get(cv2.CAP_PROP_FPS)
-        self.frame_time_ms = int(1000./float(self.fps))
-        self.time_bin_ms = self.frame_time_ms // self.num_bits
+        fps = video_dev.get(cv2.CAP_PROP_FPS)
+        frame_time_ms = int(1000./float(fps))
+        time_bin_ms = frame_time_ms // num_bits
 
-        self.output_video = output_video
         if self.output_video:
-            self.fourcc = cv2.VideoWriter_fourcc(*'MP42')
-            self.video_writer_path = output_video + '_video.avi'
-            self.video_writer = cv2.VideoWriter(self.video_writer_path,\
-                                                self.fourcc, self.fps, self.shape)
-
-    def read_video_source(self):
+            fourcc = cv2.VideoWriter_fourcc(*'MP42')
+            video_writer_path = self.output_video + '_video.avi'
+            video_writer = cv2.VideoWriter(video_writer_path, fourcc, fps, self.shape)
 
         WINDOW_NAME = 'DVS Emulator'
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
@@ -103,49 +110,50 @@ class DVS_Emulator():
         while True:
             # get an image from video source
             if is_first_pass:
-                self.curr[:], scale_width, scale_height, col_from, col_to, frame \
-                    = self.grab_first(self.video_dev, self.cam_res, self.channel)
+                curr[:], scale_width, scale_height, col_from, col_to, frame \
+                    = self.grab_first(video_dev, self.cam_res, self.channel)
                 is_first_pass = False
             else:
-                read_correctly, raw = self.video_dev.read()
+                read_correctly, raw = video_dev.read()
                 if not read_correctly:
                     break
-                self.curr[:], frame = self.grab_frame(raw, scale_width,  scale_height, col_from, col_to, self.channel)
+                curr[:], frame = self.grab_frame(raw, scale_width,  scale_height, col_from, col_to, self.channel)
 
             # do the difference
-            self.diff[:], self.abs_diff[:], self.spikes[:] = gs.thresholded_difference(self.curr, self.ref, self.threshold)
+            diff[:], abs_diff[:], spikes[:] = gs.thresholded_difference(curr, ref, threshold)
 
             # inhibition ( optional )
-            if self.is_inh_on:
-                self.spikes[:] = gs.local_inhibition(self.spikes, self.abs_diff, self.inh_coords,
-                                                     self.cam_res, self.cam_res, self.inh_width)
+            if is_inh_on:
+                spikes[:] = gs.local_inhibition(spikes, abs_diff, inh_coords,\
+                                                     self.cam_res, self.cam_res, inh_width)
 
             # update the reference
-            self.ref[:] = self.update_ref(self.output_type, self.abs_diff, self.spikes, self.ref,
-                                          self.threshold, self.frame_time_ms,
-                                          self.num_bits,
-                                          self.history_weight,
-                                          self.log2_table)
+            ref[:] = self.update_ref(self.output_type, abs_diff, spikes, ref,
+                                     threshold, frame_time_ms,
+                                     num_bits,
+                                     history_weight,
+                                     log2_table)
 
             # convert into a set of packages to send out
-            neg_spks, pos_spks, max_diff = gs.split_spikes(self.spikes, self.abs_diff, self.polarity)
+            neg_spks, pos_spks, max_diff = gs.split_spikes(spikes, abs_diff, self.polarity)
 
             spike_lists = self.make_spikes_lists(self.output_type, 
                                                 pos_spks, 
                                                 neg_spks, 
                                                 max_diff,
-                                                self.up_down_shift, 
-                                                self.data_shift, 
-                                                self.data_mask,
-                                                self.frame_time_ms,
-                                                self.max_threshold,
-                                                self.num_bits, 
-                                                self.log2_table)
+                                                up_down_shift, 
+                                                data_shift, 
+                                                data_mask,
+                                                frame_time_ms,
+                                                threshold,
+                                                max_threshold,
+                                                num_bits, 
+                                                log2_table)
 
-            self.spk_img[:] = gs.render_frame(self.spikes, self.curr, self.cam_res, self.cam_res, self.polarity)
-            cv2.imshow(WINDOW_NAME, self.spk_img.astype(uint8))
+            spk_img[:] = gs.render_frame(spikes, curr, self.cam_res, self.cam_res, self.polarity)
+            cv2.imshow(WINDOW_NAME, spk_img.astype(uint8))
 
-            if cv2.waitKey(1) & 0xFF == ord('q') or self.sim_time > 5000:
+            if cv2.waitKey(1) & 0xFF == ord('q') or self.sim_time > 2000:
                 break
 
             end_time = time.time()
@@ -158,36 +166,28 @@ class DVS_Emulator():
             else:
                 frame_count += 1
 
-            print(spike_lists)
-
-
-
             # Write spikes out in correct format
             time_index = 0
             for spk_list in spike_lists:
                 for spk in spk_list:
-                    output_spikes.append('{},{:f}'.format(spk, self.sim_time + time_index))
-                time_index += self.time_bin_ms
+                    output_spikes.append('{},{:f}'.format(spk, sim_time + time_index))
+                time_index += time_bin_ms
             
-            self.sim_time += self.frame_time_ms
+            self.sim_time += frame_time_ms
 
             # write the frame
             if self.output_video:
-                self.video_writer.write(cv2.resize(frame,(int(self.cam_res),int(self.cam_res))))
+                video_writer.write(cv2.resize(frame,(int(self.cam_res),int(self.cam_res))))
         
         if self.output_video:
-            self.video_writer.release()
+            video_writer.release()
 
-        self.video_dev.release()
+        video_dev.release()
 
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         
-        print(output_spikes)
-
         self.output_spikes = output_spikes[:]
-
-        print(self.output_spikes)
 
 
     def select_channel(self, frame, channel):
@@ -248,7 +248,7 @@ class DVS_Emulator():
 
     def make_spikes_lists(self, output_type, pos, neg, max_diff, \
                         flag_shift, data_shift, data_mask, \
-                        frame_time_ms, thresh, \
+                        frame_time_ms, thresh, max_thresh, \
                         num_bins=1, log2_table=None):
 
         if output_type == OUTPUT_RATE:
@@ -262,7 +262,7 @@ class DVS_Emulator():
                                                     flag_shift, data_shift, data_mask,
                                                     frame_time_ms,
                                                     thresh,
-                                                    thresh,
+                                                    max_thresh,
                                                     num_bins,
                                                     log2_table,
                                                     key_coding=KEY_SPINNAKER)

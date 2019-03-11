@@ -11,6 +11,8 @@ import cv2
 
 import pyNN.utility.plotting as plot
 
+from dvs_emulator import DVS_Emulator
+
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
@@ -29,10 +31,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-D', '--dont_save', action='store_true', default=False, help='Do not save results as video')
-    parser.add_argument('-O', '--live_output', action='store_true', default=False, help='Show visualisations')
     parser.add_argument('-V', '--vis', action='store_true', default=False, help='Show visualisations')
 
-    parser.add_argument('-i', '--input', required=True, type=str, help='Text file with the spikes')
+    parser.add_argument('-i', '--input', required=False, type=str, help='Video file')
+    parser.add_argument('-o', '--output_video', required=False, default=None, type=str, help='Save video from webcam')
+    parser.add_argument('-s', '--spikes', required=False, default=None, type=str, help='Convert video to spikes')
+    parser.add_argument('-w', '--webcam', required=False, default=False, action='store_true', help='Use webcam')
 
     args = parser.parse_args()
 
@@ -40,19 +44,34 @@ def parse_args():
 
 
 def main(args):
+    if args.spikes or args.webcam:
+        cam_res = 32
+        if args.webcam:
+            dvs = DVS_Emulator(cam_res, video_device='webcam', output_video=args.output_video)
+        else:
+            dvs = DVS_Emulator(cam_res, video_device=args.input)
 
-    # Read the spikes coming from the DVS emulator
-    if args.input.endswith('.txt'):
-        # Read the input file
-        raw_spikes, cam_res, sim_time = read_recording_settings(args)
-        # Spikes decoded
-        spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
+        dvs.read_video_source()
+
+        print(dvs.output_spikes)
+
+        spikes_pos, spikes_neg = read_spikes_input(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
+        cam_res = dvs.cam_res
+        sim_time = dvs.sim_time
     else:
         spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
 
+    # # Read the spikes coming from the DVS emulator
+    # if args.input.endswith('.txt'):
+    #     # Read the input file
+    #     raw_spikes, cam_res, sim_time = read_recording_settings(args)
+    #     # Spikes decoded
+    #     spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
+    # else:
+
     #### Display input spikes
-    if args.input.endswith('.txt') and args.vis:
-        times_debug = populate_debug_times(raw_spikes, cam_res, sim_time)
+    if args.spikes and args.vis:
+        times_debug = populate_debug_times(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
         image_slice_viewer(times_debug)
     elif args.vis:
         times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
@@ -296,7 +315,7 @@ def main(args):
         plot.Panel(left_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Left diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
         plot.Panel(right_diag_spikes, ylabel='Neuron idx', yticks=True, xlabel='Right diagonal', xticks=True, markersize=2, xlim=(0, sim_time)), 
         title='Receptive fields',
-        annotations='Simulated with {}'.format(sim.name())
+        annotations='Simulated with {}\n {}'.format(sim.name(), args.input)
     ) 
     matplotlib.show()
     
@@ -304,16 +323,20 @@ def main(args):
         plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         plot.Panel(diamond_spikes, ylabel='Neuron idx', yticks=True, xlabel='Diamond shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
         title='Shape detector',
-        annotations='Simulated with {}'.format(sim.name())
+        annotations='Simulated with {}\n {}'.format(sim.name(), args.input)
     )
     matplotlib.show()
 
-    if not args.dont_save:
-        # Process spiketrains for the square
-        spiking_times_square = shape_spikes_bin(square_spikes)
-        spiking_times_diamond = shape_spikes_bin(diamond_spikes)
 
-        save_video(args.input, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+    # if not args.dont_save:
+    #     # Process spiketrains for the square
+    #     spiking_times_square = shape_spikes_bin(square_spikes)
+    #     spiking_times_diamond = shape_spikes_bin(diamond_spikes)
+
+    #     # if args.webcam:
+    #     #     save_video(dvs.video_writer_path, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+    #     # else:
+    #     #     save_video(args.input, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
 
 
 def shape_spikes_bin(shape_spikes):

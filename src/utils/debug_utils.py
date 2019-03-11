@@ -36,7 +36,7 @@ def image_slice_viewer(cube):
             self.slices, rows, cols = X.shape
             self.ind = 0
 
-            self.im = ax.imshow(self.X[self.ind, :, :], vmin=-1, vmax=1)
+            self.im = ax.imshow(self.X[self.ind, :, :], vmin=np.min(X), vmax=np.max(X))
 
             ax = fig.add_axes([0.25, 0.1, 0.65, 0.03])
             self.slider = Slider(ax, 'Axis %i index' % self.slices, 0, self.slices,

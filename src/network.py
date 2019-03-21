@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import argparse
 import itertools
-import matplotlib.pyplot as matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 
 import cv2
@@ -34,8 +34,8 @@ def parse_args():
     parser.add_argument('-V', '--vis', action='store_true', default=False, help='Show visualisations')
 
     parser.add_argument('-i', '--input', required=False, type=str, help='Video file')
-    parser.add_argument('-o', '--output_video', required=False, default=None, type=str, help='Save video from webcam')
-    parser.add_argument('-s', '--spikes', required=False, default=None, type=str, help='Convert video to spikes')
+    parser.add_argument('-o', '--output_file', required=False, default=None, type=str, help='Save video and spikes DVS emulator')
+    parser.add_argument('-s', '--spikes', required=False, action='store_true', default=False, help='Convert video to spikes')
     parser.add_argument('-w', '--webcam', required=False, default=False, action='store_true', help='Use webcam')
 
     args = parser.parse_args()
@@ -44,35 +44,43 @@ def parse_args():
 
 
 def main(args):
+    # For some weird opencv/matplotlib bug, need to call matplotlib before opencv
+    plt.plot([1,2,3])
+    plt.close('all')
+
     if args.spikes or args.webcam:
         cam_res = 32
         if args.webcam:
-            dvs = DVS_Emulator(cam_res, video_device='webcam', output_video=args.output_video)
+            dvs = DVS_Emulator(cam_res, video_device='webcam', output_video=args.output_file)
         else:
             dvs = DVS_Emulator(cam_res, video_device=args.input)
 
         dvs.read_video_source()
 
-        print(dvs.output_spikes)
-
-        spikes_pos, spikes_neg = read_spikes_input(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
+        # spikes_pos, spikes_neg = read_spikes_input(dvs.spikes, dvs.cam_res, dvs.sim_time)
+        spikes_pos, spikes_neg = dvs.split_pos_neg_spikes()
         cam_res = dvs.cam_res
         sim_time = dvs.sim_time
+
+        if args.output_file:
+            dvs.save_output(args.output_file)
+
+        # raw_spikes, cam_res, sim_time = read_recording_settings(args)
+        # # Spikes decoded
+        # spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
+
     else:
         spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
 
-    # # Read the spikes coming from the DVS emulator
-    # if args.input.endswith('.txt'):
-    #     # Read the input file
-    #     raw_spikes, cam_res, sim_time = read_recording_settings(args)
-    #     # Spikes decoded
-    #     spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
-    # else:
 
     #### Display input spikes
-    if args.spikes and args.vis:
-        times_debug = populate_debug_times(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
-        image_slice_viewer(times_debug)
+    if (args.spikes or args.webcam) and args.vis:
+        # times_debug = populate_debug_times(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
+        image_slice_viewer(dvs.tuple_to_numpy(), step=dvs.time_bin_ms)
+        # times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
+        # image_slice_viewer(times_debug)
+        # times_debug = populate_debug_times_from_video(spikes_neg, cam_res, sim_time)
+        # image_slice_viewer(times_debug)
     elif args.vis:
         times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
         image_slice_viewer(times_debug)
@@ -110,7 +118,7 @@ def main(args):
 
     ##########################################################
     #### Horizontal receptive field
-    horizontal_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='horizontal_layer')
+    horizontal_layer = sim.Population(n_total / (down_size * down_size), sim.IF_curr_exp(), label='horizontal_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -130,7 +138,7 @@ def main(args):
 
     ##########################################################
     #### Vertical receptive field
-    vertical_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='vertical_layer')
+    vertical_layer = sim.Population(n_total / (down_size * down_size), sim.IF_curr_exp(), label='vertical_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -150,7 +158,7 @@ def main(args):
 
     ##########################################################
     #### Left diagonal receptive field
-    left_diag_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='left_diag_layer')
+    left_diag_layer = sim.Population(n_total / (down_size * down_size), sim.IF_curr_exp(), label='left_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -170,7 +178,7 @@ def main(args):
 
     ##########################################################
     #### Right diagonal receptive field
-    right_diag_layer = sim.Population(n_total / (down_size*down_size), sim.IF_curr_exp(), label='right_diag_layer')
+    right_diag_layer = sim.Population(n_total / (down_size * down_size), sim.IF_curr_exp(), label='right_diag_layer')
 
     pos_connections = [] 
     neg_connections = []
@@ -317,7 +325,7 @@ def main(args):
         title='Receptive fields',
         annotations='Simulated with {}\n {}'.format(sim.name(), args.input)
     ) 
-    matplotlib.show()
+    plt.show()
     
     plot.Figure(
         plot.Panel(square_spikes, ylabel='Neuron idx', yticks=True, xlabel='Square shape', xticks=True, markersize=2, xlim=(0, sim_time)), 
@@ -325,7 +333,7 @@ def main(args):
         title='Shape detector',
         annotations='Simulated with {}\n {}'.format(sim.name(), args.input)
     )
-    matplotlib.show()
+    plt.show()
 
 
     # if not args.dont_save:

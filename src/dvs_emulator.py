@@ -292,8 +292,10 @@ class DVS_Emulator():
             spike = spikes_time[0]
             t = spikes_time[1]
 
-            row = spike[0]
-            col = spike[1]
+            # In generate_spikes.pyx the numpy array which contains the spikes
+            # has them in the order [col, row, polarity]
+            row = spike[1]
+            col = spike[0]
             polarity = spike[2]
 
             if polarity == 1:
@@ -317,8 +319,10 @@ class DVS_Emulator():
             spike = spikes_time[0]
             t = spikes_time[1]
 
-            row = spike[0]
-            col = spike[1]
+            # In generate_spikes.pyx the numpy array which contains the spikes
+            # has them in the order [col, row, polarity]
+            row = spike[1]
+            col = spike[0]
             polarity = spike[2]
 
             if polarity:

@@ -74,12 +74,12 @@ def update_ref(output_type, abs_diff, spikes, ref, thresh, frame_time_ms, \
 
 def make_spikes_lists(output_type, pos, neg, max_diff, \
                       flag_shift, data_shift, data_mask, \
-                      frame_time_ms, thresh, \
+                      frame_time_ms, min_thresh, max_thresh, \
                       num_bins=1, log2_table=None):
 
     if output_type == OUTPUT_RATE:
         return gs.make_spike_lists_rate(pos, neg, max_diff,
-                                     thresh,
+                                     max_thresh,
                                      flag_shift, data_shift, data_mask,
                                      frame_time_ms,
                                      key_coding=KEY_SPINNAKER)
@@ -87,19 +87,19 @@ def make_spikes_lists(output_type, pos, neg, max_diff, \
         return gs.make_spike_lists_time_bin_thr(pos, neg, max_diff,
                                                  flag_shift, data_shift, data_mask,
                                                  frame_time_ms,
-                                                 thresh,
-                                                 thresh,
+                                                 min_thresh,
+                                                 max_thresh,
                                                  num_bins,
                                                  log2_table,
-                                                 key_coding=KEY_SPINNAKER)
+                                                 key_coding=KEY_XYP)
     else:
         return gs.make_spike_lists_time(pos, neg, max_diff,
                                      flag_shift, data_shift, data_mask,
+                                     num_bins,
                                      frame_time_ms,
-                                     frame_time_ms,
-                                     thresh,
-                                     thresh,
-                                     key_coding=KEY_SPINNAKER)
+                                     min_thresh,
+                                     max_thresh,
+                                     key_coding=KEY_XYP)
 
 
 # ---------------------------------------------------------------------- #
@@ -123,7 +123,7 @@ def main(args):
     data_mask = uint8(cam_res - 1)
 
     polarity = POLARITY_DICT[MERGED_POLARITY]
-    output_type = OUTPUT_TIME
+    output_type = OUTPUT_TIME_BIN_THR
     history_weight = 1.0
     threshold = 12  # ~ 0.05*255
     max_threshold = 180  # 12*15 ~ 0.7*255
@@ -192,8 +192,8 @@ def main(args):
     time_bin_ms = frame_time_ms // num_bits
 
     if args.output_file and args.save_video:
-        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        video_writer = cv2.VideoWriter(args.output_file[:-4]+"_video.mp4", fourcc, fps, (cam_res, cam_res))
+        fourcc = cv2.VideoWriter_fourcc(*'MP42')
+        video_writer = cv2.VideoWriter(args.output_file[:-4]+"_video.avi", fourcc, fps, (cam_res, cam_res))
 
     # ---------------------- main loop -------------------------------------#
 
@@ -251,6 +251,7 @@ def main(args):
                                         data_shift, 
                                         data_mask,
                                         frame_time_ms,
+                                        threshold,
                                         max_threshold,
                                         num_bits, 
                                         log2_table)

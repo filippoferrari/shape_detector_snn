@@ -12,6 +12,7 @@ import pydvs.generate_spikes as gs
 
 from utils.constants import *
 
+from utils.spikes_utils import neuron_id
 
 class DVS_Emulator():
 
@@ -19,7 +20,7 @@ class DVS_Emulator():
                  video_device='webcam',
                  output_video=None, 
                  polarity=MERGED_POLARITY, output_type=OUTPUT_TIME_BIN_THR, 
-                 inhibition=True):
+                 inhibition=True, key_coding=KEY_XYP):
 
         self.cam_res = cam_res
         self.shape = (self.cam_res, self.cam_res)
@@ -32,9 +33,14 @@ class DVS_Emulator():
         self.polarity = POLARITY_DICT[polarity]
         self.output_type = output_type
         self.inhibition = inhibition
+        self.key_coding = KEY_XYP
 
         self.video_device = video_device
         self.output_video = output_video
+
+        self.output_spikes_tuple = list()
+
+        self.spikes = None
 
     def read_video_source(self):
         data_shift = uint8(log2(self.cam_res))
@@ -84,7 +90,7 @@ class DVS_Emulator():
 
         fps = video_dev.get(cv2.CAP_PROP_FPS)
         frame_time_ms = int(1000./float(fps))
-        time_bin_ms = frame_time_ms // num_bits
+        self.time_bin_ms = frame_time_ms // num_bits
 
         if self.output_video:
             fourcc = cv2.VideoWriter_fourcc(*'MP42')
@@ -95,12 +101,13 @@ class DVS_Emulator():
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
         cv2.startWindowThread()
 
-        # if output_type == OUTPUT_TIME or output_type == OUTPUT_RATE:
+        # if self.output_type == OUTPUT_TIME or self.output_type == OUTPUT_RATE:
         #     num_bits = np.floor(frame_time_ms)
         # else:
         #     num_bits = 5.
 
         output_spikes = []
+        output_spikes_tuple = []
 
         is_first_pass = True
         start_time = time.time()
@@ -148,12 +155,13 @@ class DVS_Emulator():
                                                 threshold,
                                                 max_threshold,
                                                 num_bits, 
-                                                log2_table)
+                                                log2_table,
+                                                key_coding=self.key_coding)
 
             spk_img[:] = gs.render_frame(spikes, curr, self.cam_res, self.cam_res, self.polarity)
             cv2.imshow(WINDOW_NAME, spk_img.astype(uint8))
 
-            if cv2.waitKey(1) & 0xFF == ord('q') or self.sim_time > 2000:
+            if cv2.waitKey(1) & 0xFF == ord('q') or self.sim_time > 800:
                 break
 
             end_time = time.time()
@@ -171,7 +179,8 @@ class DVS_Emulator():
             for spk_list in spike_lists:
                 for spk in spk_list:
                     output_spikes.append('{},{:f}'.format(spk, sim_time + time_index))
-                time_index += time_bin_ms
+                    output_spikes_tuple.append((spk,sim_time + time_index))
+                time_index += self.time_bin_ms
             
             self.sim_time += frame_time_ms
 
@@ -184,10 +193,11 @@ class DVS_Emulator():
 
         video_dev.release()
 
-        cv2.destroyAllWindows()
         cv2.waitKey(1)
+        cv2.destroyAllWindows()
         
         self.output_spikes = output_spikes[:]
+        self.output_spikes_tuple = output_spikes_tuple[:]
 
 
     def select_channel(self, frame, channel):
@@ -248,12 +258,12 @@ class DVS_Emulator():
 
     def make_spikes_lists(self, output_type, pos, neg, max_diff, \
                         flag_shift, data_shift, data_mask, \
-                        frame_time_ms, thresh, max_thresh, \
-                        num_bins=1, log2_table=None):
+                        frame_time_ms, min_thresh, max_thresh, \
+                        num_bins=1, log2_table=None, key_coding=KEY_SPINNAKER):
 
         if output_type == OUTPUT_RATE:
             return gs.make_spike_lists_rate(pos, neg, max_diff,
-                                        thresh,
+                                        max_thresh,
                                         flag_shift, data_shift, data_mask,
                                         frame_time_ms,
                                         key_coding=KEY_SPINNAKER)
@@ -261,16 +271,61 @@ class DVS_Emulator():
             return gs.make_spike_lists_time_bin_thr(pos, neg, max_diff,
                                                     flag_shift, data_shift, data_mask,
                                                     frame_time_ms,
-                                                    thresh,
+                                                    min_thresh,
                                                     max_thresh,
                                                     num_bins,
                                                     log2_table,
-                                                    key_coding=KEY_SPINNAKER)
+                                                    key_coding=KEY_XYP)
         else:
             return gs.make_spike_lists_time(pos, neg, max_diff,
                                         flag_shift, data_shift, data_mask,
+                                        num_bins,
                                         frame_time_ms,
-                                        frame_time_ms,
-                                        thresh,
-                                        thresh,
-                                        key_coding=KEY_SPINNAKER)
+                                        min_thresh,
+                                        max_thresh,
+                                        key_coding=KEY_XYP)
+
+
+    def tuple_to_numpy(self):
+        spikes = np.zeros([self.sim_time, self.cam_res, self.cam_res])
+
+        for spikes_time in self.output_spikes_tuple:
+            # Split tuple
+            spike = spikes_time[0]
+            t = spikes_time[1]
+
+            row = spike[0]
+            col = spike[1]
+            polarity = spike[2]
+
+            if polarity == 1:
+                spikes[t, row, col] = polarity
+            elif polarity == 0:
+                spikes[t, row, col] = -1
+        return spikes
+
+
+    def split_pos_neg_spikes(self):
+        out_pos = []
+        out_neg = []
+        n_neurons = self.cam_res * self.cam_res
+
+        for _ in range(n_neurons):
+            out_pos.append(list())
+            out_neg.append(list())
+
+        for spikes_time in self.output_spikes_tuple:
+            # Split tuple
+            spike = spikes_time[0]
+            t = spikes_time[1]
+
+            row = spike[0]
+            col = spike[1]
+            polarity = spike[2]
+
+            if polarity:
+                out_pos[neuron_id(row, col, self.cam_res)].append(t)
+            else:
+                out_neg[neuron_id(row, col, self.cam_res)].append(t)
+
+        return out_pos, out_neg

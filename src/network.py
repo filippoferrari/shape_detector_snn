@@ -57,30 +57,19 @@ def main(args):
 
         dvs.read_video_source()
 
-        # spikes_pos, spikes_neg = read_spikes_input(dvs.spikes, dvs.cam_res, dvs.sim_time)
         spikes_pos, spikes_neg = dvs.split_pos_neg_spikes()
         cam_res = dvs.cam_res
         sim_time = dvs.sim_time
 
         if args.output_file:
             dvs.save_output(args.output_file)
-
-        # raw_spikes, cam_res, sim_time = read_recording_settings(args)
-        # # Spikes decoded
-        # spikes_pos, spikes_neg = read_spikes_input(raw_spikes, cam_res, sim_time)
-
     else:
         spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
 
 
     #### Display input spikes
     if (args.spikes or args.webcam) and args.vis:
-        # times_debug = populate_debug_times(dvs.output_spikes, dvs.cam_res, dvs.sim_time)
         image_slice_viewer(dvs.tuple_to_numpy(), step=dvs.time_bin_ms)
-        # times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
-        # image_slice_viewer(times_debug)
-        # times_debug = populate_debug_times_from_video(spikes_neg, cam_res, sim_time)
-        # image_slice_viewer(times_debug)
     elif args.vis:
         times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
         image_slice_viewer(times_debug)

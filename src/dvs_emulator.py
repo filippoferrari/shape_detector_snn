@@ -33,7 +33,7 @@ class DVS_Emulator():
         self.polarity = POLARITY_DICT[polarity]
         self.output_type = output_type
         self.inhibition = inhibition
-        self.key_coding = KEY_XYP
+        self.key_coding = key_coding
 
         self.video_device = video_device
         self.output_video = output_video
@@ -47,9 +47,7 @@ class DVS_Emulator():
         up_down_shift = uint8(2*data_shift)
         data_mask = uint8(self.cam_res - 1)
 
-
         output_spikes = []
-        sim_time = 0
 
         # Default values from pyDVS
         history_weight = 1.0
@@ -161,7 +159,7 @@ class DVS_Emulator():
             spk_img[:] = gs.render_frame(spikes, curr, self.cam_res, self.cam_res, self.polarity)
             cv2.imshow(WINDOW_NAME, spk_img.astype(uint8))
 
-            if cv2.waitKey(1) & 0xFF == ord('q') or self.sim_time > 800:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
             end_time = time.time()
@@ -178,8 +176,8 @@ class DVS_Emulator():
             time_index = 0
             for spk_list in spike_lists:
                 for spk in spk_list:
-                    output_spikes.append('{},{:f}'.format(spk, sim_time + time_index))
-                    output_spikes_tuple.append((spk,sim_time + time_index))
+                    output_spikes.append('{},{:f}'.format(spk, self.sim_time + time_index))
+                    output_spikes_tuple.append((spk, self.sim_time + time_index))
                 time_index += self.time_bin_ms
             
             self.sim_time += frame_time_ms
@@ -329,3 +327,10 @@ class DVS_Emulator():
                 out_neg[neuron_id(row, col, self.cam_res)].append(t)
 
         return out_pos, out_neg
+
+
+    def save_output(self, output):
+        with open(output + '_spikes.txt', 'w') as fh:
+            fh.write('{}\n'.format(self.cam_res))
+            fh.write('{}\n'.format(self.sim_time))
+            fh.write('\n'.join(self.output_spikes))

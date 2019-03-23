@@ -9,7 +9,7 @@ def neuron_id(row, col, res):
     Convert x,y pixel coordinate to neuron id coordinate
     """
     if check_bounds(row, col, res):
-        return row * res + col
+        return int(row * res + col)
     else:
         return []
 

@@ -11,21 +11,22 @@ import cv2
 
 import pyNN.utility.plotting as plot
 
-from dvs_emulator import DVS_Emulator
+from src.dvs_emulator import DVS_Emulator
 
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
 
-from utils.debug_utils import receive_spikes, image_slice_viewer
+from src.utils.debug_utils import receive_spikes, image_slice_viewer
 
-from utils.spikes_utils import read_spikes_from_video, populate_debug_times_from_video, coord_from_neuron, \
+from src.utils.spikes_utils import read_spikes_from_video, populate_debug_times_from_video, coord_from_neuron, \
                                read_recording_settings, read_spikes_input, neuron_id, populate_debug_times
 
-from network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
+from src.network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
                                            vertical_connectivity_pos, vertical_connectivity_neg, \
                                            left_diagonal_connectivity_pos, left_diagonal_connectivity_neg, \
                                            right_diagonal_connectivity_pos, right_diagonal_connectivity_neg
-from network_utils.shapes import hor_connections, vert_connections, left_diag_connections, right_diag_connections
+from src.network_utils.shapes import hor_connections, vert_connections, left_diag_connections, right_diag_connections
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -35,7 +36,7 @@ def parse_args():
 
     parser.add_argument('-i', '--input', required=False, type=str, help='Video file')
     parser.add_argument('-o', '--output_file', required=False, default=None, type=str, help='Save video and spikes DVS emulator')
-    parser.add_argument('-s', '--spikes', required=False, action='store_true', default=False, help='Convert video to spikes')
+    parser.add_argument('-v', '--video', required=False, action='store_true', default=False, help='Hardcode spikes from video')
     parser.add_argument('-w', '--webcam', required=False, default=False, action='store_true', help='Use webcam')
 
     args = parser.parse_args()
@@ -48,12 +49,14 @@ def main(args):
     plt.plot([1,2,3])
     plt.close('all')
 
-    if args.spikes or args.webcam:
+    if args.video:
+        spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
+    else:
         cam_res = 32
         if args.webcam:
             dvs = DVS_Emulator(cam_res, video_device='webcam', output_video=args.output_file)
         else:
-            dvs = DVS_Emulator(cam_res, video_device=args.input)
+            dvs = DVS_Emulator(cam_res, video_device=args.input, inhibition=False)
 
         dvs.read_video_source()
 
@@ -63,23 +66,23 @@ def main(args):
 
         if args.output_file:
             dvs.save_output(args.output_file)
-    else:
-        spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(args.input)
-
 
     #### Display input spikes
-    if (args.spikes or args.webcam) and args.vis:
-        image_slice_viewer(dvs.tuple_to_numpy(), step=dvs.time_bin_ms)
-    elif args.vis:
-        times_debug = populate_debug_times_from_video(spikes_pos, cam_res, sim_time)
-        image_slice_viewer(times_debug)
-        times_debug = populate_debug_times_from_video(spikes_neg, cam_res, sim_time)
-        image_slice_viewer(times_debug)
+    if args.vis:
+        if args.video:
+            vis_spikes = populate_debug_times_from_video(spikes_pos, spikes_neg, cam_res, sim_time)
+            image_slice_viewer(vis_spikes)
+        else:
+            image_slice_viewer(dvs.tuple_to_numpy(), step=dvs.time_bin_ms)
+
 
     n_total = cam_res * cam_res
 
     sim.setup(timestep=1.0, min_delay=1.0, max_delay=10)
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 150)
+
+    ##########################################################
+    #### Some values for the network
 
     # Some values for the network 
     exc_weight = 3

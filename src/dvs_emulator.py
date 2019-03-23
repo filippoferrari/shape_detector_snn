@@ -10,9 +10,9 @@ from numpy import int16, log2
 
 import pydvs.generate_spikes as gs
 
-from utils.constants import *
+from src.utils.constants import *
 
-from utils.spikes_utils import neuron_id
+from src.utils.spikes_utils import neuron_id
 
 class DVS_Emulator():
 

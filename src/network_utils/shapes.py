@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from utils.constants import GAUSSIAN_WEIGHTS
-from utils.spikes_utils import neuron_id, check_bounds
+from src.utils.constants import GAUSSIAN_WEIGHTS
+from src.utils.spikes_utils import neuron_id, check_bounds
 
 
 def vert_connections(r1, x, y, stride, r2):

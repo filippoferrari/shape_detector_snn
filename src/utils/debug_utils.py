@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons
 
-from spikes_utils import populate_debug_times, read_recording_settings
+from src.utils.spikes_utils import populate_debug_times, read_recording_settings
 
 def parse_args():
     parser = argparse.ArgumentParser()

@@ -218,12 +218,17 @@ def read_spikes_from_video(filepath):
     return pos_spikes, neg_spikes, res, sim_time
 
 
-def populate_debug_times_from_video(spikes, cam_res, sim_time):
+def populate_debug_times_from_video(spikes_pos, spikes_neg, cam_res, sim_time):
     out = np.zeros([sim_time, cam_res, cam_res])
 
-    for i, neuron in enumerate(spikes):
+    for i, neuron in enumerate(spikes_pos):
         for spike in neuron:
             row, col = coord_from_neuron(i, cam_res)
             out[spike, row, col] = 1
     
+    for i, neuron in enumerate(spikes_neg):
+        for spike in neuron:
+            row, col = coord_from_neuron(i, cam_res)
+            out[spike, row, col] = -1
+
     return out

@@ -37,7 +37,8 @@ class DVS_Emulator():
 
         self.video_device = video_device
         self.output_video = output_video
-
+        self.video_writer_path = output_video 
+        
         self.output_spikes_tuple = list()
 
         self.spikes = None
@@ -92,8 +93,8 @@ class DVS_Emulator():
 
         if self.output_video:
             fourcc = cv2.VideoWriter_fourcc(*'MP42')
-            video_writer_path = self.output_video + '_video.avi'
-            video_writer = cv2.VideoWriter(video_writer_path, fourcc, fps, self.shape)
+            self.video_writer_path = self.output_video + '_video.avi'
+            video_writer = cv2.VideoWriter(self.video_writer_path, fourcc, fps, self.shape)
 
         WINDOW_NAME = 'DVS Emulator'
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)

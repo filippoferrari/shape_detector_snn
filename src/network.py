@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import datetime
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,8 @@ from src.dvs_emulator import DVS_Emulator
 
 import spynnaker8 as sim
 import spynnaker8.external_devices as ext
+
+from src.utils.constants import OUTPUT_RATE, OUTPUT_TIME, OUTPUT_TIME_BIN_THR, KEY_SPINNAKER, KEY_XYP
 
 from src.utils.debug_utils import receive_spikes, image_slice_viewer
 
@@ -56,7 +59,7 @@ def main(args):
         if args.webcam:
             dvs = DVS_Emulator(cam_res, video_device='webcam', output_video=args.output_file)
         else:
-            dvs = DVS_Emulator(cam_res, video_device=args.input, inhibition=False)
+            dvs = DVS_Emulator(cam_res, video_device=args.input, inhibition=False, output_type=OUTPUT_TIME)
 
         dvs.read_video_source()
 
@@ -328,15 +331,15 @@ def main(args):
     plt.show()
 
 
-    # if not args.dont_save:
-    #     # Process spiketrains for the square
-    #     spiking_times_square = shape_spikes_bin(square_spikes)
-    #     spiking_times_diamond = shape_spikes_bin(diamond_spikes)
+    if not args.dont_save:
+        # Process spiketrains for each shape
+        spiking_times_square = shape_spikes_bin(square_spikes)
+        spiking_times_diamond = shape_spikes_bin(diamond_spikes)
 
-    #     # if args.webcam:
-    #     #     save_video(dvs.video_writer_path, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
-    #     # else:
-    #     #     save_video(args.input, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+        if args.webcam:
+            save_video(dvs.video_writer_path, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+        else:
+            save_video(args.input, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
 
 
 def shape_spikes_bin(shape_spikes):
@@ -367,8 +370,9 @@ def save_video(filepath, list_of_spikes, stride, colours):
 
     radius = stride // 2
 
+    filename = '{}_{}_{}'.format(filepath.strip('.txt').strip('avi'), datetime.datetime.now().isoformat(), 'result.avi')
     fourcc = cv2.VideoWriter_fourcc(*'MP42')
-    video_output = cv2.VideoWriter(filepath.strip('.txt') + '_result.avi', fourcc, float(fps), (width, height))
+    video_output = cv2.VideoWriter(filename, fourcc, float(fps), (width, height))
 
     for i in range(0, n_frames):
         read_correctly, frame = video_dev.read()

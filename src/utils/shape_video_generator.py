@@ -83,6 +83,8 @@ def main(args):
                     cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+radius-1, paint_h+radius//2), colour, 1) 
                 elif args.shape == 'square_tb':
                     cv2.rectangle(frame, (paint_h-radius//2, paint_x), (paint_h+radius//2 , paint_x+radius-1), colour, 1) 
+                elif args.shape == 'square_diag':
+                    cv2.rectangle(frame, (paint_x-radius//2, paint_x), (paint_x+radius//2 , paint_x+radius-1), colour, 1) 
                 elif args.shape == 'vertical':
                     cv2.rectangle(frame, (paint_x, paint_h-radius//2), (paint_x+bar_width, paint_h+radius//2), colour, -1) 
                 elif args.shape == 'diamond_lr':

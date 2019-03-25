@@ -6,10 +6,10 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install opencv-python 
-  - wget https://github.com/filippoferrari/pyDVS/archive/v1.0.tar.gz
-  - tar -xzvf v1.0.tar.gz
-  - pushd pyDVS-1.0 && python setup.py build_ext --inplace && popd
-  - export PYTHONPATH=$PYTHONPATH:$PWD/pyDVS-1.0/
+  - wget https://github.com/filippoferrari/pyDVS/archive/v1.0.tar.gz -O ~/pyDVS.tar.gz
+  - tar -xzvf ~/pyDVS.tar.gz
+  - pushd pyDVS && python setup.py build_ext --inplace && popd
+  - export PYTHONPATH=$PYTHONPATH:~/pyDVS/
 
 # before_script:
 #   - echo '[Machine]' > ~/.spynnaker.cfg

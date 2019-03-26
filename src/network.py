@@ -82,7 +82,7 @@ def main(args):
     n_total = cam_res * cam_res
 
     sim.setup(timestep=1.0, min_delay=1.0, max_delay=10)
-    sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 150)
+    sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 120)
 
     ##########################################################
     #### Some values for the network

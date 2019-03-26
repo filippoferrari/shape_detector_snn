@@ -4,7 +4,7 @@ from src.utils.spikes_utils import neuron_id, check_bounds
 
 
 def filter_neurons(neurons):
-    out = [i for i in neurons if i[0] != []]
+    out = [i for i in neurons if i[0] != [] and i[1] != []]
     return out 
    
 

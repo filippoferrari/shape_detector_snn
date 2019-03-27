@@ -7,6 +7,8 @@ def test_horizontal_positive():
     # Use a 12x12 camera for the tests
     cam_res = 12
 
+    #### Pixels inside the frame
+
     result = [(0, 0), (12, 0)]
     t = horizontal_connectivity_pos(cam_res, 0, 0, cam_res)
     assert sorted(result) == sorted(t)
@@ -23,10 +25,30 @@ def test_horizontal_positive():
     t = horizontal_connectivity_pos(cam_res, 11, 11, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = horizontal_connectivity_pos(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_pos(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_pos(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_pos(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_horizontal_negative():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(1, 0), (13, 0), (25, 0)]
     t = horizontal_connectivity_neg(cam_res, 0, 0, cam_res)
@@ -46,10 +68,30 @@ def test_horizontal_negative():
     t = horizontal_connectivity_neg(cam_res, 11, 11, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = horizontal_connectivity_neg(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_neg(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_neg(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = horizontal_connectivity_neg(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_vertical_positive():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(0, 0), (1, 0)]
     t = vertical_connectivity_pos(cam_res, 0, 0, cam_res)
@@ -67,10 +109,30 @@ def test_vertical_positive():
     t = vertical_connectivity_pos(cam_res, 11, 10, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = vertical_connectivity_pos(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_pos(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_pos(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_pos(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_vertical_negative():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(12, 0), (13, 0), (14, 0)]
     t = vertical_connectivity_neg(cam_res, 0, 0, cam_res)
@@ -90,10 +152,30 @@ def test_vertical_negative():
     t = vertical_connectivity_neg(cam_res, 11, 10, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = vertical_connectivity_neg(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_neg(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_neg(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = vertical_connectivity_neg(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_right_diagonal_positive():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(1, 12), (12, 12)]
     t = right_diagonal_connectivity_pos(cam_res, 1, 0, cam_res)
@@ -111,10 +193,30 @@ def test_right_diagonal_positive():
     t = right_diagonal_connectivity_pos(cam_res, 11, 11, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = right_diagonal_connectivity_pos(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_pos(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_pos(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_pos(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_right_diagonal_negative():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(0, 12),\
               (2, 12), (13, 12), (25, 12), (24, 12)]
@@ -135,10 +237,30 @@ def test_right_diagonal_negative():
     t = right_diagonal_connectivity_neg(cam_res, 11, 11, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = right_diagonal_connectivity_neg(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_neg(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_neg(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = right_diagonal_connectivity_neg(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_left_diagonal_positive():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(0, 13), (13, 13), (26, 13)]
     t = left_diagonal_connectivity_pos(cam_res, 1, 1, cam_res)
@@ -156,10 +278,30 @@ def test_left_diagonal_positive():
     t = left_diagonal_connectivity_pos(cam_res, 11, 11, cam_res)
     assert sorted(result) == sorted(t)
 
+    #### Pixels outside 
+
+    result = []
+    t = left_diagonal_connectivity_pos(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_pos(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_pos(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_pos(cam_res, 13, 14, cam_res)
+    assert sorted(result) == sorted(t)
+
 
 def test_left_diagonal_negative():
     # Use a 12x12 camera for the tests
     cam_res = 12
+
+    #### Pixels inside the frame
 
     result = [(12, 13), (24, 13), (25, 13), (38, 13),\
               (1, 13), (2, 13), (14, 13), (27, 13)]
@@ -178,4 +320,22 @@ def test_left_diagonal_negative():
 
     result = [(129, 143), (142, 143), (118, 143), (131, 143)]
     t = left_diagonal_connectivity_neg(cam_res, 11, 11, cam_res)
+    assert sorted(result) == sorted(t)
+
+    #### Pixels outside 
+
+    result = []
+    t = left_diagonal_connectivity_neg(cam_res, -1, -1, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_neg(cam_res, -1, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_neg(cam_res, 13, 4, cam_res)
+    assert sorted(result) == sorted(t)
+
+    result = []
+    t = left_diagonal_connectivity_neg(cam_res, 13, 14, cam_res)
     assert sorted(result) == sorted(t)

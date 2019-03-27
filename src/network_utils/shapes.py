@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from src.utils.constants import GAUSSIAN_WEIGHTS
-from src.utils.spikes_utils import neuron_id, check_bounds
+from src.utils.spikes_utils import neuron_id, check_bounds, filter_connections
 
 
 def vert_connections(r1, x, y, stride, r2):
@@ -38,7 +38,7 @@ def vert_connections(r1, x, y, stride, r2):
             pre_y = y+i
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
 
-    out = [i for i in out if i[0] != []]
+    out = filter_connections(out)
     
     return list(set(out))
 
@@ -81,7 +81,7 @@ def hor_connections(r1, x, y, stride, r2):
             pre_y = y+stride+gaussians[j]
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w, 1))
 
-    out = [i for i in out if i[0] != []]
+    out = filter_connections(out)
 
     return list(set(out))
 
@@ -114,8 +114,8 @@ def left_diag_connections(r1, x, y, stride, r2):
         # Right side
         out.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2), 1, 1))
 
-    out = [i for i in out if i[0] != []]
-
+    out = filter_connections(out)
+    
     return out
 
 
@@ -147,6 +147,6 @@ def right_diag_connections(r1, x, y, stride, r2):
         # Bottom side
         out.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2), 1, 1))
 
-    out = [i for i in out if i[0] != []]
+    out = filter_connections(out)
 
     return out

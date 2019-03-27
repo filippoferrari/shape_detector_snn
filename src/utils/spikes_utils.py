@@ -30,6 +30,11 @@ def check_bounds(x, y, res):
     return x >= 0 and x < res and y >= 0 and y < res
 
 
+def filter_connections(connections):
+    out = [i for i in connections if i[0] != [] and i[1] != []]
+    return out 
+   
+
 def decode_spike(cam_res, key):
     """ 
     Decode DVS emulator output

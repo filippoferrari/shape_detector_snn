@@ -89,15 +89,20 @@ def main(args):
 
     # Some values for the network 
     exc_weight = 3
-    inh_weight = 1
-
     exc_delay = 1
+
+    inh_weight = 1
     inh_delay = 1
+
+    shapes_weight, = 3 
+    shapes_delay = 1
 
     down_size = 1
 
     ##########################################################
     #### Set the first layers of the network
+
+    print(spikes_pos)
 
     # SpikeSourceArray for the positive polarity of the DVS
     stimulus_pos = sim.Population(n_total, sim.SpikeSourceArray(spike_times=spikes_pos), label='stimulus_pos')
@@ -206,20 +211,20 @@ def main(args):
     stride = 2
 
     connections = [] 
-    for x in range(0, cam_res/down_size):
-        for y in range(0, cam_res/down_size):
-            connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            connections += hor_connections(cam_res/down_size, x, y, stride, cam_res/down_size, shapes_weight, shapes_delay)
 
     sim.Projection(horizontal_layer, square_layer, sim.FromListConnector(connections, column_names=['pre', 'post', 'weight', 'delay']), \
-                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=shapes_weight, delay=shapes_delay))
 
     connections = [] 
-    for x in range(0, cam_res/down_size):
-        for y in range(0, cam_res/down_size):
-            connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            connections += vert_connections(cam_res/down_size, x, y, stride, cam_res/down_size, shapes_weight, shapes_delay)
 
     sim.Projection(vertical_layer, square_layer, sim.FromListConnector(connections, column_names=['pre', 'post', 'weight', 'delay']), \
-                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=shapes_weight, delay=shapes_delay))
 
 
     # Lateral inhibition
@@ -240,20 +245,20 @@ def main(args):
     stride = 2
 
     connections = [] 
-    for x in range(0, cam_res/down_size):
-        for y in range(0, cam_res/down_size):
-            connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+    for x in range(0, cam_res, down_size):
+        for y in range(0, cam_res, down_size):
+            connections += left_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size, shapes_weight, shapes_delay)
 
     sim.Projection(left_diag_layer, diamond_layer, sim.FromListConnector(connections, column_names=['pre', 'post', 'weight', 'delay']), \
-                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=shapes_weight, delay=shapes_delay))
 
     connections = [] 
     for x in range(0, cam_res/down_size):
         for y in range(0, cam_res/down_size):
-            connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size)
+            connections += right_diag_connections(cam_res/down_size, x, y, stride, cam_res/down_size, shapes_weight, shapes_delay)
 
     sim.Projection(right_diag_layer, diamond_layer, sim.FromListConnector(connections, column_names=['pre', 'post', 'weight', 'delay']), \
-                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=exc_weight, delay=exc_delay))
+                   receptor_type='excitatory', synapse_type=sim.StaticSynapse(weight=shapes_weight, delay=shapes_delay))
 
 
     # Lateral inhibition

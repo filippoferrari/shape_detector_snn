@@ -94,7 +94,7 @@ def main(args):
     inh_weight = 1
     inh_delay = 1
 
-    shapes_weight, = 3 
+    shapes_weight = 3 
     shapes_delay = 1
 
     down_size = 1

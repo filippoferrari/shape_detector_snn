@@ -28,13 +28,14 @@ def vert_connections(r1, x, y, stride, r2, w, d):
 
     for j, gw in enumerate(GAUSSIAN_WEIGHTS):
         gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+        
         for i in range(-stride, stride + 1):
             # Left side
-            pre_x = x-stride+gaussians[j]
+            pre_x = x-stride + gaussians[j]
             pre_y = y+i
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
             # Right side
-            pre_x = x+stride+gaussians[j]
+            pre_x = x+stride + gaussians[j]
             pre_y = y+i
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
 
@@ -71,14 +72,15 @@ def hor_connections(r1, x, y, stride, r2, w, d):
 
     for j, gw in enumerate(GAUSSIAN_WEIGHTS):
         gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+
         for i in range(-stride, stride + 1):
             # Top side 
             pre_x = x+i
-            pre_y = y-stride+gaussians[j]
+            pre_y = y-stride + gaussians[j]
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
             # Bottom side
             pre_x = x+i
-            pre_y = y+stride+gaussians[j]
+            pre_y = y+stride + gaussians[j]
             out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
 
     out = filter_connections(out)
@@ -108,15 +110,23 @@ def left_diag_connections(r1, x, y, stride, r2, w, d):
     """
     out = []
 
-    for i in range(0, 2 * stride + 1):
-        # Left side 
-        out.append((neuron_id(x-2*stride+i, y+i, r1), neuron_id(x, y, r2), w, d))
-        # Right side
-        out.append((neuron_id(x+i, y-2*stride+i, r1), neuron_id(x, y, r2), w, d))
+    for j, gw in enumerate(GAUSSIAN_WEIGHTS):
+        gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+        
+        for i in range(0, 2 * stride + 1):
+            # Left side 
+            pre_x = x-2*stride+i + gaussians[j]
+            pre_y = y+i - gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
+            
+            # Right side
+            pre_x = x + i + gaussians[j]
+            pre_y = y-2*stride+i - gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
 
     out = filter_connections(out)
-    
-    return out
+
+    return list(set(out))
 
 
 def right_diag_connections(r1, x, y, stride, r2, w, d):
@@ -141,12 +151,20 @@ def right_diag_connections(r1, x, y, stride, r2, w, d):
     """
     out = []
 
-    for i in range(0, 2 * stride + 1):
-        # Top side 
-        out.append((neuron_id(x-2*stride+i, y-i, r1), neuron_id(x, y, r2), w, d))
-        # Bottom side
-        out.append((neuron_id(x+i, y+2*stride-i, r1), neuron_id(x, y, r2), w, d))
+    for j, gw in enumerate(GAUSSIAN_WEIGHTS):
+        gaussians = list(range(-(len(GAUSSIAN_WEIGHTS)//2), len(GAUSSIAN_WEIGHTS)//2 +1))
+        
+        for i in range(0, 2 * stride + 1):
+            # Top side 
+            pre_x = x-2*stride+i + gaussians[j]
+            pre_y = y-i + gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
+        
+            # Bottom side
+            pre_x = x+i + gaussians[j]
+            pre_y = y+2*stride-i + gaussians[j]
+            out.append((neuron_id(pre_x, pre_y, r1), neuron_id(x, y, r2), w*gw, d))
 
     out = filter_connections(out)
 
-    return out
+    return list(set(out))

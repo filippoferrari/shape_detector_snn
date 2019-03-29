@@ -2,11 +2,8 @@
 
 from __future__ import print_function
 
-import datetime
-import itertools
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
 
 import pyNN.utility.plotting as plot
 
@@ -19,15 +16,16 @@ from src.utils.constants import OUTPUT_RATE, OUTPUT_TIME, OUTPUT_TIME_BIN_THR, K
 
 from src.utils.debug_utils import receive_spikes, image_slice_viewer
 
-from src.utils.io_utils import parse_args, read_config
+from src.utils.io_utils import parse_args, read_config, save_video
 
 from src.utils.spikes_utils import read_spikes_from_video, populate_debug_times_from_video, coord_from_neuron, \
-                               read_recording_settings, neuron_id, populate_debug_times
+                                   read_recording_settings, neuron_id, populate_debug_times
 
 from src.network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
                                            vertical_connectivity_pos, vertical_connectivity_neg, \
                                            left_diagonal_connectivity_pos, left_diagonal_connectivity_neg, \
                                            right_diagonal_connectivity_pos, right_diagonal_connectivity_neg
+
 from src.network_utils.shapes import hor_connections, vert_connections, left_diag_connections, right_diag_connections
 
 
@@ -339,56 +337,6 @@ def shape_spikes_bin(shape_spikes):
                 spiking_times[int(spike)] = []
             spiking_times[int(spike)].append(neuron)
     return spiking_times
-
-
-def save_video(config, filepath, list_of_spikes, stride, colours):
-
-    # Colours in opencv are BGR
-    colour = {'r':(0, 0, 255), 'g':(0, 255, 0), 'b':(255, 0, 0), 'y':(0, 255, 190)}
-
-    video_dev = cv2.VideoCapture(filepath)
-    if not video_dev.isOpened():
-        print('Video file could not be opened:', filepath)
-        exit()
-
-    fps = video_dev.get(cv2.CAP_PROP_FPS)
-    frame_time_ms = int(1000./float(fps))
-    height = int(video_dev.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    width = int(video_dev.get(cv2.CAP_PROP_FRAME_WIDTH))
-    n_frames = int(video_dev.get(cv2.CAP_PROP_FRAME_COUNT))
-
-    radius = stride // 2
-
-    filename = '{}_{}_{}_{}_{}'.format(filepath.strip('.txt').strip('avi'), config['output_type'],\
-                                       config['video'], datetime.datetime.now().isoformat(), 'result.avi')
-    fourcc = cv2.VideoWriter_fourcc(*'MP42')
-    video_output = cv2.VideoWriter(filename, fourcc, float(fps), (width, height))
-
-    for i in range(0, n_frames):
-        read_correctly, frame = video_dev.read()
-        if not read_correctly:
-            break
-
-        for index, spikes in enumerate(list_of_spikes):
-            # Accumulate all spikes occurring between frames
-            spikes_bin = []
-            for j in range(i*frame_time_ms, (i+1)*frame_time_ms):
-                spikes_bin.append(spikes.get(j))
-
-            spikes_bin = sorted(list(itertools.chain.from_iterable([k for k in spikes_bin if k])))
-
-            if spikes_bin and len(spikes_bin) > 0:
-                spike = spikes_bin[len(spikes_bin)//2] # take median for now 
-                x, y = coord_from_neuron(spike, height)
-                cv2.rectangle(frame, (x-radius, y-radius), (x+radius, y+radius), colour[colours[index]], 1) 
-
-        video_output.write(frame)
-        # cv2.imshow('frame', frame)
-
-        cv2.imwrite('output/frame_{0:05d}.png'.format(i),frame)
-
-    video_dev.release()
-    video_output.release()
 
 
 if __name__ == '__main__':

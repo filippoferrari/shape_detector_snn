@@ -16,7 +16,7 @@ from src.utils.spikes_utils import neuron_id
 
 class DVS_Emulator():
 
-    def __init__(self, cam_res, 
+    def __init__(self, cam_res, config,
                  video_device='webcam',
                  output_video=None, 
                  polarity=MERGED_POLARITY, output_type=OUTPUT_TIME_BIN_THR, 
@@ -24,20 +24,20 @@ class DVS_Emulator():
 
         self.cam_res = cam_res
         self.shape = (self.cam_res, self.cam_res)
-        if video_device == 'webcam':
+        if config['input'] == 'webcam':
             self.channel = RGB
         else:
             self.channel = VIDEO
         self.sim_time = 0
 
-        self.polarity = POLARITY_DICT[polarity]
-        self.output_type = output_type
-        self.inhibition = inhibition
-        self.key_coding = key_coding
+        self.polarity = POLARITY_DICT[config['polarity']]
+        self.output_type = config['output_type']
+        self.inhibition = config['inhibition']
+        self.key_coding = config['key_coding']
 
-        self.video_device = video_device
-        self.output_video = output_video
-        self.video_writer_path = output_video 
+        self.video_device = config['input']
+        self.output_video = config['output_file']
+        self.video_writer_path = config['output_file']
         
         self.output_spikes_tuple = list()
 

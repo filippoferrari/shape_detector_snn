@@ -1,0 +1,19 @@
+input: "/Users/ff/dev/project/recordings/square_tb_outline_5x5_black_bg_32x32.avi"
+output_file: ''
+video: False
+webcam: False
+dont_save: False
+vis: False
+
+polarity: 'MERGED'
+output_type: 'OUTPUT_TIME'
+inhibition: False
+key_coding: 'KEY_XYP'
+
+exc_weight: 3
+exc_delay: 1
+inh_weight : 1
+inh_delay : 1
+shapes_weight : 3 
+shapes_delay : 1
+down_size : 1

@@ -22,7 +22,7 @@ from src.utils.debug_utils import receive_spikes, image_slice_viewer
 from src.utils.io_utils import parse_args, read_config
 
 from src.utils.spikes_utils import read_spikes_from_video, populate_debug_times_from_video, coord_from_neuron, \
-                               read_recording_settings, read_spikes_input, neuron_id, populate_debug_times
+                               read_recording_settings, neuron_id, populate_debug_times
 
 from src.network_utils.receptive_fields import horizontal_connectivity_pos, horizontal_connectivity_neg, \
                                            vertical_connectivity_pos, vertical_connectivity_neg, \
@@ -62,7 +62,7 @@ def main(config):
 
     n_neurons = cam_res * cam_res
 
-    sim.setup(timestep=1.0, min_delay=1.0, max_delay=10)
+    sim.setup(timestep=1.0, min_delay=1.0, max_delay=10.0)
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 120)
 
     ##########################################################
@@ -326,9 +326,9 @@ def main(config):
         spiking_times_diamond = shape_spikes_bin(diamond_spikes)
 
         if config['webcam']:
-            save_video(dvs.video_writer_path, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+            save_video(config, dvs.video_writer_path, [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
         else:
-            save_video(config['input'], [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
+            save_video(config, config['input'], [spiking_times_square,spiking_times_diamond], stride, ['r','y'])
 
 
 def shape_spikes_bin(shape_spikes):
@@ -341,7 +341,7 @@ def shape_spikes_bin(shape_spikes):
     return spiking_times
 
 
-def save_video(filepath, list_of_spikes, stride, colours):
+def save_video(config, filepath, list_of_spikes, stride, colours):
 
     # Colours in opencv are BGR
     colour = {'r':(0, 0, 255), 'g':(0, 255, 0), 'b':(255, 0, 0), 'y':(0, 255, 190)}
@@ -359,7 +359,8 @@ def save_video(filepath, list_of_spikes, stride, colours):
 
     radius = stride // 2
 
-    filename = '{}_{}_{}'.format(filepath.strip('.txt').strip('avi'), datetime.datetime.now().isoformat(), 'result.avi')
+    filename = '{}_{}_{}_{}_{}'.format(filepath.strip('.txt').strip('avi'), config['output_type'],\
+                                       config['video'], datetime.datetime.now().isoformat(), 'result.avi')
     fourcc = cv2.VideoWriter_fourcc(*'MP42')
     video_output = cv2.VideoWriter(filename, fourcc, float(fps), (width, height))
 
@@ -378,8 +379,8 @@ def save_video(filepath, list_of_spikes, stride, colours):
 
             if spikes_bin and len(spikes_bin) > 0:
                 spike = spikes_bin[len(spikes_bin)//2] # take median for now 
-                row, col = coord_from_neuron(spike, height)
-                cv2.rectangle(frame, (col-radius, row-radius), (col+radius, row+radius), colour[colours[index]], 1) 
+                x, y = coord_from_neuron(spike, height)
+                cv2.rectangle(frame, (x-radius, y-radius), (x+radius, y+radius), colour[colours[index]], 1) 
 
         video_output.write(frame)
         # cv2.imshow('frame', frame)

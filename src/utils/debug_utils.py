@@ -60,7 +60,7 @@ def image_slice_viewer(cube, step=41):
             self.update()
 
         def update(self):
-            self.im.set_data(self.X[self.ind, :, :])
+            self.im.set_data(self.X[self.ind, :, :].T)
             ax.set_ylabel('slice %s' % self.ind)
             self.im.axes.figure.canvas.draw()
 

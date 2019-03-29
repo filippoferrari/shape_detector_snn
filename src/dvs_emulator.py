@@ -293,16 +293,14 @@ class DVS_Emulator():
             spike = spikes_time[0]
             t = spikes_time[1]
 
-            # In generate_spikes.pyx the numpy array which contains the spikes
-            # has them in the order [col, row, polarity]
-            row = spike[1]
-            col = spike[0]
+            x = spike[0]
+            y = spike[1]
             polarity = spike[2]
 
             if polarity == 1:
-                spikes[t, row, col] = polarity
+                spikes[t, x, y] = polarity
             elif polarity == 0:
-                spikes[t, row, col] = -1
+                spikes[t, x, y] = -1
         return spikes
 
 
@@ -320,16 +318,14 @@ class DVS_Emulator():
             spike = spikes_time[0]
             t = spikes_time[1]
 
-            # In generate_spikes.pyx the numpy array which contains the spikes
-            # has them in the order [col, row, polarity]
-            row = spike[1]
-            col = spike[0]
+            x = spike[0]
+            y = spike[1]
             polarity = spike[2]
 
             if polarity:
-                out_pos[neuron_id(row, col, self.cam_res)].append(t)
+                out_pos[neuron_id(x, y, self.cam_res)].append(t)
             else:
-                out_neg[neuron_id(row, col, self.cam_res)].append(t)
+                out_neg[neuron_id(x, y, self.cam_res)].append(t)
 
         return out_pos, out_neg
 

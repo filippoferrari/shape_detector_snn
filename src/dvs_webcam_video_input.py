@@ -37,10 +37,7 @@ def main(config):
         spikes_pos, spikes_neg, cam_res, sim_time = read_spikes_from_video(config['input'])
     else:
         cam_res = 32
-        if config['webcam']:
-            dvs = DVS_Emulator(cam_res, config, video_device='webcam', output_video=config['output_file'])
-        else:
-            dvs = DVS_Emulator(cam_res, config, video_device=config['input'], inhibition=False, output_type=OUTPUT_TIME)
+        dvs = DVS_Emulator(cam_res, config)
 
         dvs.read_video_source()
 

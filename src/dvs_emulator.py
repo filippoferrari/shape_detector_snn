@@ -185,7 +185,7 @@ class DVS_Emulator():
 
             # write the frame
             if self.output_video:
-                video_writer.write(cv2.resize(frame,(int(self.cam_res),int(self.cam_res))))
+                video_writer.write(cv2.resize(spk_img.astype(uint8), (int(self.cam_res),int(self.cam_res))))
         
         if self.output_video:
             video_writer.release()

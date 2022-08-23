@@ -44,7 +44,7 @@ matplotlib==2.2.4
 mccabe==0.6.1
 mistune==0.8.4
 more-itertools==5.0.0
-nbconvert==5.4.0
+nbconvert==6.5.1
 nbformat==4.4.0
 nengo==2.8.0
 nengo-gui==0.4.3
